@@ -82,9 +82,23 @@ export default function DateRangePicker({
   onPresetChange,
   onRangeChange,
   onCalendarMonthYearChange,
+  /** @type {'default' | 'sheet'} */
+  variant = 'default',
+  open: controlledOpen,
+  onOpenChange,
 }) {
   const { start, end } = dateRange
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+
+  function setOpen(next) {
+    const value = typeof next === 'function' ? next(open) : next
+    if (onOpenChange) onOpenChange(value)
+    else setInternalOpen(value)
+  }
+
+  const isSheet = variant === 'sheet'
   const [gridWeekStart, setGridWeekStart] = useState(() =>
     clampWeekGridStart(startOfWeek(startOfDay(end), { weekStartsOn: 1 })),
   )
@@ -112,7 +126,7 @@ export default function DateRangePicker({
   }, [presetId, selectMonthView, gridWeekStart])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || isSheet) return
     function onDocMouseDown(e) {
       if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false)
     }
@@ -125,7 +139,7 @@ export default function DateRangePicker({
       document.removeEventListener('mousedown', onDocMouseDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, isSheet])
 
   useEffect(() => {
     if (!open) setCustomClick(null)
@@ -209,6 +223,7 @@ export default function DateRangePicker({
       onCalendarMonthYearChange(day.getMonth() + 1, day.getFullYear())
       const r = getDateRangeForCalendarMonth(day.getFullYear(), day.getMonth() + 1)
       onRangeChange(r)
+      setOpen(false)
       return
     }
 
@@ -226,6 +241,7 @@ export default function DateRangePicker({
     const hi = maxDate([a, b])
     onRangeChange({ start: startOfDay(lo), end: endOfDay(hi) })
     setCustomClick(null)
+    setOpen(false)
   }
 
   const triggerPrimary = useMemo(() => {
@@ -261,29 +277,19 @@ export default function DateRangePicker({
     return () => el.removeEventListener('wheel', onWheel)
   }, [open, presetId])
 
-  return (
-    <div ref={rootRef} className="relative min-w-0 max-w-full">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        onClick={() => setOpen(o => !o)}
-        className="inline-flex h-10 max-w-full items-center gap-2 rounded-lg border border-brand-100 bg-white px-3 text-sm shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-      >
-        <Calendar size={16} className="shrink-0 text-brand-600" aria-hidden />
-        <span className="min-w-0 flex-1 text-left text-sm font-medium leading-snug text-ink-800">
-          {triggerPrimary}
-        </span>
-        <ChevronDown size={16} className="shrink-0 text-ink-400" aria-hidden />
-      </button>
-
-      {open && (
+  const panel = open ? (
         <div
           role="dialog"
           aria-label="Date range"
-          className="absolute left-0 right-0 z-[90] mt-2 w-full max-w-[calc(100vw-2rem)] rounded-xl border border-brand-100 bg-white shadow-xl sm:left-auto sm:right-0 sm:w-[min(calc(100vw-1.5rem),36rem)]"
+          className={
+            isSheet
+              ? 'w-full max-h-[min(52vh,420px)] overflow-hidden rounded-xl border border-brand-100 bg-white shadow-2xl'
+              : 'absolute left-0 right-0 z-[90] mt-2 w-full max-w-[calc(100vw-2rem)] rounded-xl border border-brand-100 bg-white shadow-xl sm:left-auto sm:right-0 sm:w-[min(calc(100vw-1.5rem),36rem)]'
+          }
         >
-          <div className="flex max-h-[min(70vh,520px)] flex-col sm:flex-row sm:max-h-none">
+          <div
+            className={`flex max-h-[min(70vh,520px)] flex-col ${isSheet ? 'max-h-[min(48vh,400px)]' : 'sm:flex-row sm:max-h-none'}`}
+          >
             {/* Presets */}
             <div className="max-h-48 shrink-0 overflow-y-auto border-b border-brand-100 sm:max-h-none sm:w-[11.5rem] sm:border-b-0 sm:border-r sm:border-brand-100">
               <ul className="py-1">
@@ -427,7 +433,28 @@ export default function DateRangePicker({
             </div>
           </div>
         </div>
-      )}
+      ) : null
+
+  if (isSheet) {
+    return <div ref={rootRef}>{panel}</div>
+  }
+
+  return (
+    <div ref={rootRef} className="relative min-w-0 max-w-full">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        onClick={() => setOpen(o => !o)}
+        className="inline-flex h-10 max-w-full items-center gap-2 rounded-lg border border-brand-100 bg-white px-3 text-sm shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+      >
+        <Calendar size={16} className="shrink-0 text-brand-600" aria-hidden />
+        <span className="min-w-0 flex-1 text-left text-sm font-medium leading-snug text-ink-800">
+          {triggerPrimary}
+        </span>
+        <ChevronDown size={16} className="shrink-0 text-ink-400" aria-hidden />
+      </button>
+      {panel}
     </div>
   )
 }

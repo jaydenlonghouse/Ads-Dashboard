@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react'
+import { format } from 'date-fns'
 import { AlertCircle, Mail } from 'lucide-react'
 
 import { useDashboardData } from './hooks/useDashboardData.js'
@@ -22,10 +23,10 @@ import {
 import { buildAdvertisingQuestionGmailUrl } from './utils/advertisingQuestionEmail.js'
 import { KPI_DEFS, DEFAULT_CHART_METRIC_KEYS } from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
-import { useAuth } from './contexts/AuthContext.jsx'
 
 import DateRangePicker from './components/DateRangePicker.jsx'
 import PlatformFilter from './components/PlatformFilter.jsx'
+import MobileBottomBar from './components/MobileBottomBar.jsx'
 import KpiCard from './components/KpiCard.jsx'
 import KpiMetricMobileSheet from './components/KpiMetricMobileSheet.jsx'
 import TrendChart from './components/TrendChart.jsx'
@@ -33,7 +34,6 @@ import DealsTable from './components/DealsTable.jsx'
 import longhouseAdvertisingLogo from './assets/longhouse-advertising-logo.svg'
 
 export default function App() {
-  const { signOut, session } = useAuth()
   const now = new Date()
   const [datePresetId, setDatePresetId] = useState(DEFAULT_DATE_PRESET_ID)
   const [dateRange, setDateRange] = useState(() => getDateRangeForPreset(DEFAULT_DATE_PRESET_ID))
@@ -128,6 +128,18 @@ export default function App() {
 
   const askQuestionDisabled = !askQuestionGmailUrl
 
+  const mobileDateSummary = format(dateRange.start, 'MMM d') + ' – ' + format(dateRange.end, 'MMM d')
+
+  const datePickerProps = {
+    presetId: datePresetId,
+    dateRange,
+    calendarMonth,
+    calendarYear,
+    onPresetChange: handleDatePresetChange,
+    onRangeChange: r => setDateRange(clampDateRangeToDataEarliest(r)),
+    onCalendarMonthYearChange: handleCalendarMonthYearChange,
+  }
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-brand-50">
       <header className="sticky top-0 z-[100] border-b border-brand-950/40 bg-brand-800 px-4 py-3 shadow-sm sm:px-6">
@@ -143,21 +155,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex min-w-0 w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
-            {!useMock && session?.user?.email ? (
-              <div className="flex items-center gap-2 text-xs text-white/80">
-                <span className="hidden sm:inline max-w-[12rem] truncate">
-                  {session.user.email}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => signOut()}
-                  className="rounded-lg border border-white/20 px-2.5 py-1.5 text-xs font-normal text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/90"
-                >
-                  Sign out
-                </button>
-              </div>
-            ) : null}
+          <div className="hidden min-w-0 flex-wrap items-center justify-end gap-2 md:flex md:gap-3">
             <a
               href={askQuestionDisabled ? undefined : askQuestionGmailUrl}
               target="_blank"
@@ -174,21 +172,13 @@ export default function App() {
               Ask A Question
             </a>
             <div className="min-w-0 max-w-full">
-            <DateRangePicker
-              presetId={datePresetId}
-              dateRange={dateRange}
-              calendarMonth={calendarMonth}
-              calendarYear={calendarYear}
-              onPresetChange={handleDatePresetChange}
-              onRangeChange={r => setDateRange(clampDateRangeToDataEarliest(r))}
-              onCalendarMonthYearChange={handleCalendarMonthYearChange}
-            />
+              <DateRangePicker {...datePickerProps} />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="relative z-0 mx-auto min-w-0 max-w-7xl space-y-6 overflow-x-hidden px-4 py-6 sm:px-6">
+      <main className="relative z-0 mx-auto min-w-0 max-w-7xl space-y-6 overflow-x-hidden px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-6 sm:px-6">
         {useMock && (
           <div className="flex items-center gap-2 break-words rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
             <AlertCircle size={16} className="shrink-0" />
@@ -207,7 +197,7 @@ export default function App() {
           </div>
         )}
 
-        <div className="flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="hidden w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2 md:flex">
           <PlatformFilter selected={platformTab} onChange={setPlatformTab} />
           {!isLoading && (
             <p className="w-full min-w-0 text-xs leading-[1.45] text-ink-500 sm:ml-auto sm:w-auto sm:max-w-[min(100%,22rem)] sm:text-right">
@@ -215,6 +205,12 @@ export default function App() {
             </p>
           )}
         </div>
+
+        {!isLoading && (
+          <p className="text-center text-xs leading-[1.45] text-ink-500 md:hidden">
+            {formatDateRange(dateRange.start, dateRange.end)} vs. Comparison Period
+          </p>
+        )}
 
         {isLoading ? (
           <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
@@ -286,6 +282,17 @@ export default function App() {
 
         <DealsTable deals={periodDeals} isLoading={isLoading} />
       </main>
+
+      {isMobile ? (
+        <MobileBottomBar
+          platformTab={platformTab}
+          onPlatformChange={setPlatformTab}
+          dateSummary={mobileDateSummary}
+          askDisabled={askQuestionDisabled}
+          askHref={askQuestionGmailUrl}
+          datePickerProps={datePickerProps}
+        />
+      ) : null}
     </div>
   )
 }
