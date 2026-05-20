@@ -262,7 +262,7 @@ export default function DateRangePicker({
   }, [open, presetId])
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative min-w-0 max-w-full">
       <button
         type="button"
         aria-expanded={open}
@@ -281,7 +281,7 @@ export default function DateRangePicker({
         <div
           role="dialog"
           aria-label="Date range"
-          className="absolute right-0 z-[90] mt-2 w-[min(calc(100vw-1.5rem),36rem)] rounded-xl border border-brand-100 bg-white shadow-xl"
+          className="absolute left-0 right-0 z-[90] mt-2 w-full max-w-[calc(100vw-2rem)] rounded-xl border border-brand-100 bg-white shadow-xl sm:left-auto sm:right-0 sm:w-[min(calc(100vw-1.5rem),36rem)]"
         >
           <div className="flex max-h-[min(70vh,520px)] flex-col sm:flex-row sm:max-h-none">
             {/* Presets */}

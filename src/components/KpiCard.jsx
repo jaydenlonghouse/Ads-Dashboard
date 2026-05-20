@@ -15,7 +15,6 @@ import KpiMetricTooltip from './KpiMetricTooltip.jsx'
  * @param {string}  [tooltip]
  * @param {boolean} [chartSelected]
  * @param {boolean} [isMobile]
- * @param {() => void} [onMobileSheetRequest]  — tap ? on phone: open metric sheet
  */
 export default function KpiCard({
   label,
@@ -26,7 +25,6 @@ export default function KpiCard({
   chartSelected = false,
   isMobile = false,
   onCardActivate,
-  onOpenMetricSheet,
 }) {
   const badgeClass = getBadgeClass(delta, lowerIsBetter, chartSelected)
   const deltaText = formatDelta(delta)
@@ -57,13 +55,11 @@ export default function KpiCard({
     <>
       <div className="flex items-start justify-between gap-2">
         <p className={`min-w-0 flex-1 text-xs font-medium leading-[1.45] ${labelClass}`}>{label}</p>
-        {tooltip ? (
+        {tooltip && !isMobile ? (
           <KpiMetricTooltip
             text={tooltip}
             chartSelected={chartSelected}
             metricLabel={label}
-            isMobile={isMobile}
-            onMobileSheetRequest={onOpenMetricSheet}
           />
         ) : null}
       </div>

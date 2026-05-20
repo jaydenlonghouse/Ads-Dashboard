@@ -33,7 +33,7 @@ function TabIcon({ id, selected }) {
 
 export default function PlatformFilter({ selected, onChange }) {
   return (
-    <div className="flex flex-wrap gap-1.5 items-center">
+    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
       <span className="text-xs text-ink-400 mr-1">Platform</span>
       {TABS.map(({ id, label }) => (
         <button

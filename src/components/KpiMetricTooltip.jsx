@@ -2,7 +2,7 @@
  * KPI help tooltip — Longhouse brand: deep blue panel (Blue 6), light tint text, Accent 1 focus.
  */
 
-export default function KpiMetricTooltip({ text, chartSelected, metricLabel, isMobile, onMobileSheetRequest }) {
+export default function KpiMetricTooltip({ text, chartSelected, metricLabel }) {
   if (!text) return null
 
   const triggerSurface = chartSelected
@@ -15,10 +15,6 @@ export default function KpiMetricTooltip({ text, chartSelected, metricLabel, isM
         type="button"
         aria-label={`What is ${metricLabel}?`}
         className={`inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full text-[11px] font-semibold leading-none outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 ${triggerSurface} ${chartSelected ? 'ring-offset-brand-800' : 'ring-offset-white'}`}
-        onClick={e => {
-          e.stopPropagation()
-          if (isMobile && typeof onMobileSheetRequest === 'function') onMobileSheetRequest()
-        }}
         onPointerDown={e => e.stopPropagation()}
       >
         ?

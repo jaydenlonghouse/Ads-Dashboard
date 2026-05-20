@@ -237,8 +237,8 @@ export default function TrendChart({ data, selectedMetricKeys }) {
   const lineUsesRaw = model.mode === 'shared' || model.mode === 'dual'
 
   return (
-    <div className="space-y-2">
-      <ResponsiveContainer width="100%" height={260}>
+    <div className="min-w-0 max-w-full space-y-2 overflow-hidden">
+      <ResponsiveContainer width="100%" height={260} minWidth={0}>
         <LineChart
           data={model.chartData}
           margin={chartMargin}

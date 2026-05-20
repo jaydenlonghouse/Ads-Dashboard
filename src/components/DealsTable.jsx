@@ -52,7 +52,7 @@ export default function DealsTable({ deals, isLoading = false }) {
   }
 
   return (
-    <section className="rounded-xl border border-brand-100 bg-white p-5">
+    <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
       <h2 className="text-base font-semibold text-brand-800 leading-[1.2] mb-1">Deals</h2>
       <p className="text-xs text-ink-400 mb-4 leading-[1.45]">
         Linked from advertising metrics in the selected date range and platform filter.
@@ -63,8 +63,8 @@ export default function DealsTable({ deals, isLoading = false }) {
           No linked deals in this period.
         </p>
       ) : (
-        <div className="overflow-x-auto -mx-1 px-1">
-          <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
+        <div className="-mx-5 overflow-x-auto overscroll-x-contain px-5">
+          <table className="w-full min-w-[32rem] border-collapse text-left text-sm sm:min-w-[36rem]">
             <thead>
               <tr className="border-b border-brand-100">
                 <SortHeader

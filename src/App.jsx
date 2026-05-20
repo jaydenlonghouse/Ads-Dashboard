@@ -129,10 +129,10 @@ export default function App() {
   const askQuestionDisabled = !askQuestionGmailUrl
 
   return (
-    <div className="min-h-screen bg-brand-50">
-      <header className="sticky top-0 z-[100] border-b border-brand-950/40 bg-brand-800 px-6 py-3 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0 shrink-0">
+    <div className="min-h-screen overflow-x-hidden bg-brand-50">
+      <header className="sticky top-0 z-[100] border-b border-brand-950/40 bg-brand-800 px-4 py-3 shadow-sm sm:px-6">
+        <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 max-w-full shrink-0">
             <img
               src={longhouseAdvertisingLogo}
               alt="Longhouse Advertising"
@@ -143,7 +143,7 @@ export default function App() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-3 items-center justify-end">
+          <div className="flex min-w-0 w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
             {!useMock && session?.user?.email ? (
               <div className="flex items-center gap-2 text-xs text-white/80">
                 <span className="hidden sm:inline max-w-[12rem] truncate">
@@ -173,6 +173,7 @@ export default function App() {
               <Mail size={16} className="shrink-0" aria-hidden />
               Ask A Question
             </a>
+            <div className="min-w-0 max-w-full">
             <DateRangePicker
               presetId={datePresetId}
               dateRange={dateRange}
@@ -182,13 +183,14 @@ export default function App() {
               onRangeChange={r => setDateRange(clampDateRangeToDataEarliest(r))}
               onCalendarMonthYearChange={handleCalendarMonthYearChange}
             />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="relative z-0 max-w-7xl mx-auto space-y-6 px-6 py-6">
+      <main className="relative z-0 mx-auto min-w-0 max-w-7xl space-y-6 overflow-x-hidden px-4 py-6 sm:px-6">
         {useMock && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-2.5 text-sm">
+          <div className="flex items-center gap-2 break-words rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
             <AlertCircle size={16} className="shrink-0" />
             <span>
               Running with <strong>mock data</strong> (<code className="bg-amber-100 px-1 rounded">VITE_USE_MOCK=true</code>).
@@ -205,23 +207,23 @@ export default function App() {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
           <PlatformFilter selected={platformTab} onChange={setPlatformTab} />
           {!isLoading && (
-            <p className="ml-auto max-w-full text-right text-xs leading-[1.45] text-ink-500 sm:max-w-[min(100%,22rem)] sm:shrink-0">
+            <p className="w-full min-w-0 text-xs leading-[1.45] text-ink-500 sm:ml-auto sm:w-auto sm:max-w-[min(100%,22rem)] sm:text-right">
               {formatDateRange(dateRange.start, dateRange.end)} vs. Comparison Period
             </p>
           )}
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
             {KPI_DEFS.map(d => (
               <div key={d.key} className="bg-white rounded-xl border border-brand-100 p-4 animate-pulse h-24" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
             {KPI_DEFS.map(d => (
               <KpiCard
                 key={d.key}
@@ -244,11 +246,6 @@ export default function App() {
                     toggleChartMetric(d.key)
                   }
                 }}
-                onOpenMetricSheet={
-                  isMobile
-                    ? () => setMetricSheet({ key: d.key, label: d.label, tooltip: d.tooltip })
-                    : undefined
-                }
               />
             ))}
           </div>
@@ -268,7 +265,7 @@ export default function App() {
           }}
         />
 
-        <section className="bg-white rounded-xl border border-brand-100 p-5">
+        <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
           <h2 className="text-base font-semibold text-brand-800 leading-[1.2] mb-1">
             Metric trend (selected range).
           </h2>
