@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: theme('fontFamily.sans');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: theme('fontFamily.sans');
+  }
+
+  body {
+    @apply bg-brand-50 text-ink-900 font-sans text-base font-normal leading-[1.45] tracking-normal antialiased;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* KPI card delta badges */
+  .badge-positive {
+    @apply bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+  .badge-negative {
+    @apply bg-red-100 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+  .badge-neutral {
+    @apply bg-ink-100 text-ink-600 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+  .badge-neutral-on-dark {
+    @apply bg-white/15 text-brand-50 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+  .badge-positive-on-dark {
+    @apply bg-emerald-500/20 text-emerald-100 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+  .badge-negative-on-dark {
+    @apply bg-red-500/20 text-red-100 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+
+  /* Platform badge colors */
+  .badge-facebook  { @apply bg-blue-100 text-blue-800; }
+  .badge-google    { @apply bg-red-100 text-red-800; }
+  .badge-microsoft { @apply bg-emerald-100 text-emerald-800; }
+  .badge-tiktok    { @apply bg-pink-100 text-pink-800; }
+  .badge-meta      { @apply bg-indigo-100 text-indigo-800; }
+
+  /*
+   * Platform filter chips — use non-hyphenated names so Tailwind’s scanner does
+   * not treat them as utilities (e.g. `pill-btn` was parsed like `p-` + invalid theme key).
+   */
+  .dashboardPill {
+    @apply inline-flex items-center justify-center rounded-full text-sm font-medium
+           border border-solid border-brand-100 bg-white text-ink-600 shadow-sm
+           px-3 py-1.5 transition-all duration-150;
+  }
+  .dashboardPill:hover:not(.dashboardPillSelected) {
+    border-color: theme('colors.brand.500');
+    color: theme('colors.brand.800');
+  }
+  .dashboardPillSelected {
+    @apply border-brand-800 bg-brand-800 text-white shadow-sm;
+  }
+  .dashboardPillSelected:hover {
+    @apply border-brand-800 bg-brand-800 text-white;
+  }
+}
