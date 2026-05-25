@@ -15,10 +15,10 @@ import {
 } from '../utils/dealsUtils.js'
 import { DealPlatformIcons } from './PlatformLogos.jsx'
 
-/** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus'} SortKey */
+/** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus' | 'lostReason'} SortKey */
 
 /**
- * @param {{ deals: Array<{ id: string, businessName: string, dealStage: string, dealStatus: string, date?: string|null, platforms?: ('google'|'meta')[] }>, isLoading?: boolean }} props
+ * @param {{ deals: Array<{ id: string, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, date?: string|null, platforms?: ('google'|'meta')[] }>, isLoading?: boolean }} props
  */
 export default function DealsTable({ deals, isLoading = false }) {
   const [sortKey, setSortKey] = useState(/** @type {SortKey} */ ('businessName'))
@@ -64,7 +64,7 @@ export default function DealsTable({ deals, isLoading = false }) {
         </p>
       ) : (
         <div className="-mx-5 overflow-x-auto overscroll-x-contain px-5">
-          <table className="w-full min-w-[32rem] border-collapse text-left text-sm sm:min-w-[36rem]">
+          <table className="w-full min-w-[40rem] border-collapse text-left text-sm sm:min-w-[44rem]">
             <thead>
               <tr className="border-b border-brand-100">
                 <SortHeader
@@ -94,6 +94,13 @@ export default function DealsTable({ deals, isLoading = false }) {
                   sortKey={sortKey}
                   sortDir={sortDir}
                   onSort={toggleSort}
+                />
+                <SortHeader
+                  label="Lost reason"
+                  columnKey="lostReason"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
                   className="pr-0"
                 />
               </tr>
@@ -111,9 +118,10 @@ export default function DealsTable({ deals, isLoading = false }) {
                     {formatDealDate(deal.date)}
                   </td>
                   <td className="py-2.5 pr-4 text-ink-700">{formatDealField(deal.dealStage)}</td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-4">
                     <DealStatusPill status={deal.dealStatus} />
                   </td>
+                  <td className="py-2.5 text-ink-700">{formatDealField(deal.lostReason)}</td>
                 </tr>
               ))}
             </tbody>

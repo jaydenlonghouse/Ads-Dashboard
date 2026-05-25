@@ -145,7 +145,25 @@ function normaliseDeal(record) {
     businessName: f['Business Name'] ?? '—',
     dealStage: f['Deal Stage'] ?? '—',
     dealStatus: f['Deal Status'] ?? '—',
+    lostReason: pickLostReasonFromFields(f),
   }
+}
+
+function pickLostReasonFromFields(fields) {
+  const candidates = ['Lost Reason', 'Lost reason', 'lost reason']
+  for (const key of candidates) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      const v = fields[key]
+      if (v != null && String(v).trim() !== '') return String(v).trim()
+    }
+  }
+  for (const name of Object.keys(fields)) {
+    if (name.trim().toLowerCase() === 'lost reason') {
+      const v = fields[name]
+      if (v != null && String(v).trim() !== '') return String(v).trim()
+    }
+  }
+  return null
 }
 
 async function fetchAllFromTable(tableName, { sortField, mapRecord }) {
