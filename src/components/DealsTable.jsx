@@ -96,7 +96,7 @@ export default function DealsTable({ deals, isLoading = false }) {
                   onSort={toggleSort}
                 />
                 <SortHeader
-                  label="Lost reason"
+                  label="Lost reasons"
                   columnKey="lostReason"
                   sortKey={sortKey}
                   sortDir={sortDir}

@@ -137,30 +137,77 @@ function normalise(record) {
   }
 }
 
+/** Coerce Airtable single-select, lookup, or text to a display string. */
+function pickAirtableSelectValue(value) {
+  if (value == null || value === '') return null
+  if (typeof value === 'string') {
+    const s = value.trim()
+    return s || null
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const parsed = pickAirtableSelectValue(item)
+      if (parsed) return parsed
+    }
+    return null
+  }
+  if (typeof value === 'object') {
+    if (typeof value.name === 'string') {
+      const s = value.name.trim()
+      if (s) return s
+    }
+    if (typeof value.label === 'string') {
+      const s = value.label.trim()
+      if (s) return s
+    }
+  }
+  const s = String(value).trim()
+  return s || null
+}
+
+function pickDealDateFromFields(fields) {
+  const candidates = ['Deal Created', 'Date', 'Created', 'Created Date']
+  for (const key of candidates) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      const v = fields[key]
+      if (v != null && String(v).trim() !== '') return v
+    }
+  }
+  return null
+}
+
 function normaliseDeal(record) {
   const f = record.fields ?? {}
   return {
     id: record.id,
-    date: f['Date'] ?? null,
+    date: pickDealDateFromFields(f),
     businessName: f['Business Name'] ?? '—',
-    dealStage: f['Deal Stage'] ?? '—',
-    dealStatus: f['Deal Status'] ?? '—',
+    dealStage: pickAirtableSelectValue(f['Deal Stage']) ?? '—',
+    dealStatus: pickAirtableSelectValue(f['Deal Status']) ?? '—',
     lostReason: pickLostReasonFromFields(f),
   }
 }
 
 function pickLostReasonFromFields(fields) {
-  const candidates = ['Lost Reason', 'Lost reason', 'lost reason']
+  const candidates = [
+    'Lost Reasons',
+    'Lost Reason',
+    'Lost reason',
+    'lost reason',
+    'lost reasons',
+  ]
   for (const key of candidates) {
     if (Object.prototype.hasOwnProperty.call(fields, key)) {
-      const v = fields[key]
-      if (v != null && String(v).trim() !== '') return String(v).trim()
+      const parsed = pickAirtableSelectValue(fields[key])
+      if (parsed) return parsed
     }
   }
   for (const name of Object.keys(fields)) {
-    if (name.trim().toLowerCase() === 'lost reason') {
-      const v = fields[name]
-      if (v != null && String(v).trim() !== '') return String(v).trim()
+    const norm = name.trim().toLowerCase()
+    if (norm === 'lost reason' || norm === 'lost reasons') {
+      const parsed = pickAirtableSelectValue(fields[name])
+      if (parsed) return parsed
     }
   }
   return null
