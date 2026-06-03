@@ -20,6 +20,7 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       gcTime:    10 * 60 * 1000,
       retry: (failureCount, error) => {
+        if (error?.status === 401 || error?.status === 403) return false
         // Don't retry on 404; let the Airtable client handle 429 internally
         if (error?.status === 404) return false
         return failureCount < 2

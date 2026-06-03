@@ -2,6 +2,12 @@
  * Authenticated fetches to Vercel /api routes (Airtable proxy).
  */
 
+import { hubUrl, useMockData } from '../config/env.js'
+import {
+  clearSessionAndRedirectToHub,
+  isSessionAuthFailure,
+} from '../integrations/tool-auth/lib/clearSessionAndRedirectToHub.js'
+
 async function readJsonSafe(res) {
   const text = await res.text()
   if (!text) return {}
@@ -27,10 +33,12 @@ async function apiGet(path, accessToken) {
   const body = await readJsonSafe(res)
 
   if (!res.ok) {
-    throw Object.assign(
-      new Error(body?.error ?? res.statusText ?? 'API request failed'),
-      { status: res.status },
-    )
+    const message = body?.error ?? res.statusText ?? 'API request failed'
+    if (!useMockData && isSessionAuthFailure(res.status, message)) {
+      await clearSessionAndRedirectToHub(hubUrl)
+      throw Object.assign(new Error('Redirecting to Tools Hub…'), { status: res.status })
+    }
+    throw Object.assign(new Error(message), { status: res.status })
   }
 
   return body
