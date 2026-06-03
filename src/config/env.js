@@ -13,6 +13,12 @@ export const allowedEmailDomain = (
   import.meta.env.VITE_ALLOWED_EMAIL_DOMAIN ?? 'longhouse.co'
 ).trim().toLowerCase()
 
+/** Must match slug in Tools Hub → Manage Tools (e.g. ads-dashboard). */
+export const toolSlug = (import.meta.env.VITE_TOOL_SLUG ?? '').trim()
+
+/** Tools Hub URL — used when access is denied. */
+export const hubUrl = (import.meta.env.VITE_HUB_URL ?? '').trim()
+
 export const questionEmailTo = (import.meta.env.VITE_QUESTION_EMAIL_TO ?? '').trim()
 export const questionEmailSubject = (import.meta.env.VITE_QUESTION_EMAIL_SUBJECT ?? '').trim()
 

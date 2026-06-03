@@ -2,7 +2,15 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext.jsx'
-import AuthGate from './components/AuthGate.jsx'
+import ToolAuthGate from './integrations/tool-auth/react/ToolAuthGate.jsx'
+import App from './App.jsx'
+import {
+  hubUrl,
+  supabaseAnonKey,
+  supabaseUrl,
+  toolSlug,
+  useMockData,
+} from './config/env.js'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -20,11 +28,48 @@ const queryClient = new QueryClient({
   },
 })
 
+function Root() {
+  if (useMockData) {
+    return <App />
+  }
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-brand-50 px-6">
+        <p className="max-w-md text-center text-sm text-ink-700">
+          Missing <code className="rounded bg-brand-100 px-1">VITE_SUPABASE_URL</code> or{' '}
+          <code className="rounded bg-brand-100 px-1">VITE_SUPABASE_ANON_KEY</code> in{' '}
+          <code className="rounded bg-brand-100 px-1">.env</code>. See README, or set{' '}
+          <code className="rounded bg-brand-100 px-1">VITE_USE_MOCK=true</code> for demo mode.
+        </p>
+      </div>
+    )
+  }
+
+  if (!toolSlug || !hubUrl) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-brand-50 px-6">
+        <p className="max-w-md text-center text-sm text-ink-700">
+          Missing <code className="rounded bg-brand-100 px-1">VITE_TOOL_SLUG</code> or{' '}
+          <code className="rounded bg-brand-100 px-1">VITE_HUB_URL</code> in{' '}
+          <code className="rounded bg-brand-100 px-1">.env</code>. See tool-auth integration docs.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <ToolAuthGate toolSlug={toolSlug} hubUrl={hubUrl}>
+      <App />
+    </ToolAuthGate>
+  )
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AuthGate />
+        <Root />
       </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>,
