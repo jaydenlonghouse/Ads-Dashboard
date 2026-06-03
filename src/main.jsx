@@ -30,7 +30,11 @@ const queryClient = new QueryClient({
 
 function Root() {
   if (useMockData) {
-    return <App />
+    return (
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    )
   }
 
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -60,7 +64,9 @@ function Root() {
 
   return (
     <ToolAuthGate toolSlug={toolSlug} hubUrl={hubUrl}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ToolAuthGate>
   )
 }
@@ -68,9 +74,7 @@ function Root() {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Root />
-      </AuthProvider>
+      <Root />
     </QueryClientProvider>
   </React.StrictMode>,
 )

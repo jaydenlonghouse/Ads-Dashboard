@@ -1,6 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-
-let client = null
+import { getSupabase } from '../../../lib/supabaseClient.js'
 
 /**
  * @param {{ supabaseUrl: string, supabaseAnonKey: string }} config
@@ -11,13 +9,10 @@ export function createToolSupabase({ supabaseUrl, supabaseAnonKey }) {
       'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Use the same values as the Tools Hub.',
     )
   }
-  if (!client) {
-    client = createClient(supabaseUrl, supabaseAnonKey)
-  }
-  return client
+  return getSupabase()
 }
 
 /** Reset singleton (useful in tests). */
 export function resetToolSupabaseClient() {
-  client = null
+  // App singleton lives in lib/supabaseClient.js; no-op here for kit API compatibility.
 }
