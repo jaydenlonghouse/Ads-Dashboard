@@ -5,7 +5,7 @@
  * - One metric or all metrics share the same unit kind (% / $ / counts): one Y-axis of actual values.
  * - Exactly two unit kinds: left and right Y-axes with real values so same-unit metrics compare fairly.
  * - Three or more kinds: each line scaled 0–100 to its own max in the window; tooltips show actuals.
- * - Single metric: dashed horizontal line at the period average.
+ * - Single metric: dashed running-average line (mean through each day).
  */
 
 import { useMemo } from 'react'
@@ -33,27 +33,29 @@ const TREND_LINE_KEY = '__trend'
 const TREND_LINE_COLOR = '#94A3B8'
 
 /**
- * Attach a flat period-average series when exactly one metric is plotted.
+ * Attach a running (cumulative) average series when exactly one metric is plotted.
+ * At each point, the value is the mean of all finite metric values from the start through that point.
  * @param {Array<Record<string, unknown>>} rows
  * @param {string} metricKey
- * @returns {{ chartData: Array<Record<string, unknown>>, hasTrend: boolean, average: number | null }}
+ * @returns {{ chartData: Array<Record<string, unknown>>, hasTrend: boolean }}
  */
 function withSingleMetricAverage(rows, metricKey) {
-  const values = []
-  for (const row of rows) {
+  let sum = 0
+  let count = 0
+  let hasTrend = false
+  const chartData = rows.map(row => {
     const raw = row[metricKey]
-    if (raw == null || !Number.isFinite(Number(raw))) continue
-    values.push(Number(raw))
-  }
-  if (!values.length) {
-    return { chartData: rows, hasTrend: false, average: null }
-  }
-  const average = values.reduce((sum, v) => sum + v, 0) / values.length
-  const chartData = rows.map(row => ({
-    ...row,
-    [TREND_LINE_KEY]: average,
-  }))
-  return { chartData, hasTrend: true, average }
+    if (raw != null && Number.isFinite(Number(raw))) {
+      sum += Number(raw)
+      count += 1
+      hasTrend = true
+    }
+    return {
+      ...row,
+      [TREND_LINE_KEY]: count > 0 ? sum / count : null,
+    }
+  })
+  return { chartData, hasTrend }
 }
 
 function collectFiniteMetricValues(data, keys) {
@@ -274,7 +276,7 @@ export default function TrendChart({ data, selectedMetricKeys }) {
         })}
         {model.hasTrend && trendRow?.[TREND_LINE_KEY] != null && (
           <p style={{ color: TREND_LINE_COLOR }}>
-            Average:{' '}
+            Running avg:{' '}
             {getKpiDef(model.trendMetricKey)?.format(trendRow[TREND_LINE_KEY]) ??
               String(trendRow[TREND_LINE_KEY])}
           </p>
@@ -380,13 +382,14 @@ export default function TrendChart({ data, selectedMetricKeys }) {
             <Line
               type="linear"
               dataKey={TREND_LINE_KEY}
-              name="Average"
+              name="Running avg"
               stroke={TREND_LINE_COLOR}
               strokeWidth={2}
               strokeDasharray="6 4"
               dot={false}
               activeDot={false}
               legendType="plainline"
+              connectNulls
               isAnimationActive={false}
             />
           )}
@@ -398,7 +401,7 @@ export default function TrendChart({ data, selectedMetricKeys }) {
             Lines share one scale (actual values). Tooltip shows formatted values.
             {model.hasTrend ? (
               <span className="block mt-1">
-                Dashed line is the average for this period.
+                Dashed line is the running average through each day in this period.
               </span>
             ) : null}
             {model.sharedKind === CHART_VALUE_KIND.CURRENCY && orderedKeys.length > 1 ? (
