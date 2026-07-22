@@ -5,7 +5,7 @@
  * - One metric or all metrics share the same unit kind (% / $ / counts): one Y-axis of actual values.
  * - Exactly two unit kinds: left and right Y-axes with real values so same-unit metrics compare fairly.
  * - Three or more kinds: each line scaled 0–100 to its own max in the window; tooltips show actuals.
- * - Single metric: dashed linear-regression trend line over the period.
+ * - Single metric: dashed horizontal line at the period average.
  */
 
 import { useMemo } from 'react'
@@ -33,52 +33,27 @@ const TREND_LINE_KEY = '__trend'
 const TREND_LINE_COLOR = '#94A3B8'
 
 /**
- * Least-squares line y = slope * x + intercept for finite (x, y) points.
- * @param {Array<{ x: number, y: number }>} points
- * @returns {{ slope: number, intercept: number } | null}
- */
-function linearRegression(points) {
-  if (points.length < 2) return null
-  let sumX = 0
-  let sumY = 0
-  let sumXY = 0
-  let sumXX = 0
-  for (const { x, y } of points) {
-    sumX += x
-    sumY += y
-    sumXY += x * y
-    sumXX += x * x
-  }
-  const n = points.length
-  const denom = n * sumXX - sumX * sumX
-  if (Math.abs(denom) < 1e-12) return null
-  const slope = (n * sumXY - sumX * sumY) / denom
-  const intercept = (sumY - slope * sumX) / n
-  return { slope, intercept }
-}
-
-/**
- * Attach a regression trend series when exactly one metric is plotted.
+ * Attach a flat period-average series when exactly one metric is plotted.
  * @param {Array<Record<string, unknown>>} rows
  * @param {string} metricKey
- * @returns {{ chartData: Array<Record<string, unknown>>, hasTrend: boolean }}
+ * @returns {{ chartData: Array<Record<string, unknown>>, hasTrend: boolean, average: number | null }}
  */
-function withSingleMetricTrend(rows, metricKey) {
-  const points = []
-  for (let i = 0; i < rows.length; i++) {
-    const raw = rows[i][metricKey]
+function withSingleMetricAverage(rows, metricKey) {
+  const values = []
+  for (const row of rows) {
+    const raw = row[metricKey]
     if (raw == null || !Number.isFinite(Number(raw))) continue
-    points.push({ x: i, y: Number(raw) })
+    values.push(Number(raw))
   }
-  const fit = linearRegression(points)
-  if (!fit) {
-    return { chartData: rows, hasTrend: false }
+  if (!values.length) {
+    return { chartData: rows, hasTrend: false, average: null }
   }
-  const chartData = rows.map((row, i) => ({
+  const average = values.reduce((sum, v) => sum + v, 0) / values.length
+  const chartData = rows.map(row => ({
     ...row,
-    [TREND_LINE_KEY]: fit.slope * i + fit.intercept,
+    [TREND_LINE_KEY]: average,
   }))
-  return { chartData, hasTrend: true }
+  return { chartData, hasTrend: true, average }
 }
 
 function collectFiniteMetricValues(data, keys) {
@@ -166,7 +141,7 @@ export default function TrendChart({ data, selectedMetricKeys }) {
       const sharedKind = getChartValueKind(orderedKeys[0])
       const singleKey = orderedKeys.length === 1 ? orderedKeys[0] : null
       const { chartData, hasTrend } = singleKey
-        ? withSingleMetricTrend(data, singleKey)
+        ? withSingleMetricAverage(data, singleKey)
         : { chartData: data, hasTrend: false }
       const vals = [
         ...collectFiniteMetricValues(chartData, orderedKeys),
@@ -299,7 +274,7 @@ export default function TrendChart({ data, selectedMetricKeys }) {
         })}
         {model.hasTrend && trendRow?.[TREND_LINE_KEY] != null && (
           <p style={{ color: TREND_LINE_COLOR }}>
-            Trend:{' '}
+            Average:{' '}
             {getKpiDef(model.trendMetricKey)?.format(trendRow[TREND_LINE_KEY]) ??
               String(trendRow[TREND_LINE_KEY])}
           </p>
@@ -405,7 +380,7 @@ export default function TrendChart({ data, selectedMetricKeys }) {
             <Line
               type="linear"
               dataKey={TREND_LINE_KEY}
-              name="Trend"
+              name="Average"
               stroke={TREND_LINE_COLOR}
               strokeWidth={2}
               strokeDasharray="6 4"
@@ -423,7 +398,7 @@ export default function TrendChart({ data, selectedMetricKeys }) {
             Lines share one scale (actual values). Tooltip shows formatted values.
             {model.hasTrend ? (
               <span className="block mt-1">
-                Dashed line is the linear trend over this period.
+                Dashed line is the average for this period.
               </span>
             ) : null}
             {model.sharedKind === CHART_VALUE_KIND.CURRENCY && orderedKeys.length > 1 ? (
