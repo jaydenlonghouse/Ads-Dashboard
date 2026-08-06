@@ -17,8 +17,8 @@ function metricPlatformKind(platform) {
 
 /**
  * @param {Array<{ linkedDealIds?: string[], platform?: string }>} metricRows
- * @param {Array<{ id: string, date?: string|null, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null }>} allDeals
- * @returns {Array<{ id: string, date?: string|null, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, platforms: ('google'|'meta')[] }>}
+ * @param {Array<{ id: string, date?: string|null, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, label?: string|null }>} allDeals
+ * @returns {Array<{ id: string, date?: string|null, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, label?: string|null, platforms: ('google'|'meta')[] }>}
  */
 export function getDealsForMetricRows(metricRows, allDeals) {
   const byId = Object.fromEntries(allDeals.map(d => [d.id, d]))
@@ -90,6 +90,7 @@ export function dealSortValue(deal, sortKey) {
   if (sortKey === 'dealStage') return formatDealField(deal.dealStage)
   if (sortKey === 'dealStatus') return formatDealField(deal.dealStatus)
   if (sortKey === 'lostReason') return formatDealField(deal.lostReason)
+  if (sortKey === 'label') return formatDealField(deal.label)
   return ''
 }
 
