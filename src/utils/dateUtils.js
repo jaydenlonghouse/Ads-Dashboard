@@ -14,6 +14,7 @@ import {
   startOfDay,
   endOfDay,
   startOfYear,
+  startOfQuarter,
   isValid,
   isBefore,
   isAfter,
@@ -76,6 +77,7 @@ export const DATE_PRESET_OPTIONS = [
   { id: 'last30', label: 'Last 30 Days', subLabel: 'Up To Yesterday' },
   { id: 'last60', label: 'Last 60 Days', subLabel: 'Up To Yesterday' },
   { id: 'last90', label: 'Last 90 Days', subLabel: 'Up To Yesterday' },
+  { id: 'qtd', label: 'Quarter To Date', subLabel: 'Up To Yesterday' },
   { id: 'ytd', label: 'Year To Date', subLabel: 'Up To Yesterday' },
   { id: 'selectMonth', label: 'Select month' },
 ]
@@ -175,6 +177,9 @@ export function getDateRangeForPreset(presetId, refDate = new Date()) {
       break
     case 'last90':
       range = { start: startOfDay(subDays(yesterday, 89)), end: endOfDay(yesterday) }
+      break
+    case 'qtd':
+      range = { start: startOfDay(startOfQuarter(yesterday)), end: endOfDay(yesterday) }
       break
     case 'ytd':
       range = { start: startOfDay(startOfYear(yesterday)), end: endOfDay(yesterday) }

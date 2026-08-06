@@ -186,38 +186,7 @@ function normaliseDeal(record) {
     dealStage: pickAirtableSelectValue(f['Deal Stage']) ?? '—',
     dealStatus: pickAirtableSelectValue(f['Deal Status']) ?? '—',
     lostReason: pickLostReasonFromFields(f),
-    label: pickLabelFromFields(f),
   }
-}
-
-function pickLabelFromFields(fields) {
-  const candidates = ['Label', 'Labels', 'label', 'labels']
-  for (const key of candidates) {
-    if (Object.prototype.hasOwnProperty.call(fields, key)) {
-      const parsed = formatLabelField(fields[key])
-      if (parsed) return parsed
-    }
-  }
-  for (const name of Object.keys(fields)) {
-    const norm = name.trim().toLowerCase()
-    if (norm === 'label' || norm === 'labels') {
-      const parsed = formatLabelField(fields[name])
-      if (parsed) return parsed
-    }
-  }
-  return null
-}
-
-/** Single- or multi-select Label → display string. */
-function formatLabelField(value) {
-  if (value == null || value === '') return null
-  if (Array.isArray(value)) {
-    const parts = value
-      .map(item => pickAirtableSelectValue(item))
-      .filter(Boolean)
-    return parts.length ? parts.join(', ') : null
-  }
-  return pickAirtableSelectValue(value)
 }
 
 function pickLostReasonFromFields(fields) {

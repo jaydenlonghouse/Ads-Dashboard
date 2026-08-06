@@ -58,8 +58,8 @@ export const MOCK_RECORDS = [
 ]
 
 export const MOCK_DEALS = [
-  { id: 'rec_mock_1', date: '2024-10-11', businessName: 'Summit Outdoor Co.', dealStage: 'Discovery', dealStatus: 'open', lostReason: null, label: 'New Lead' },
-  { id: 'rec_mock_2', date: '2024-11-10', businessName: 'Harbor View Dental', dealStage: 'Consideration & Follow up', dealStatus: 'active', lostReason: null, label: 'Warm' },
-  { id: 'rec_mock_3', date: '2024-11-12', businessName: 'Northline HVAC', dealStage: 'Proposal', dealStatus: 'won', lostReason: null, label: 'Partner' },
-  { id: 'rec_mock_4', date: '2024-11-04', businessName: 'Cedar Creek Realty', dealStage: 'Closed', dealStatus: 'lost', lostReason: 'Budget', label: null },
+  { id: 'rec_mock_1', date: '2024-10-11', businessName: 'Summit Outdoor Co.', dealStage: 'Discovery', dealStatus: 'open', lostReason: null },
+  { id: 'rec_mock_2', date: '2024-11-10', businessName: 'Harbor View Dental', dealStage: 'Consideration & Follow up', dealStatus: 'active', lostReason: null },
+  { id: 'rec_mock_3', date: '2024-11-12', businessName: 'Northline HVAC', dealStage: 'Proposal', dealStatus: 'won', lostReason: null },
+  { id: 'rec_mock_4', date: '2024-11-04', businessName: 'Cedar Creek Realty', dealStage: 'Closed', dealStatus: 'lost', lostReason: 'Budget' },
 ]
