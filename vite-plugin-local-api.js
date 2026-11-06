@@ -6,10 +6,12 @@
 import { loadEnv } from 'vite'
 import recordsHandler from './api/records.js'
 import dealsHandler from './api/deals.js'
+import leadSessionsHandler from './api/lead-sessions.js'
 
 const ROUTES = {
   '/api/records': recordsHandler,
   '/api/deals': dealsHandler,
+  '/api/lead-sessions': leadSessionsHandler,
 }
 
 function createVercelResponse(nodeRes) {

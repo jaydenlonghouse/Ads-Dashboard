@@ -81,6 +81,50 @@ export const KPI_DEFS = [
 /** Default metrics shown on the trend chart when the dashboard loads. */
 export const DEFAULT_CHART_METRIC_KEYS = ['cpl', 'cpd', 'cpw']
 
+/** Funnel rates shown for both Ads and SEO departments. */
+export const FUNNEL_RATE_DEFS = [
+  {
+    key: 'leadToDealRate',
+    label: 'Lead to deal',
+    tooltip: 'Share of leads in this period that have a linked deal.',
+    format: v => formatPercent(v, 1),
+    lowerIsBetter: false,
+  },
+  {
+    key: 'dealCloseRate',
+    label: 'Deal close rate',
+    tooltip: 'Share of deals in this period whose status is won.',
+    format: v => formatPercent(v, 1),
+    lowerIsBetter: false,
+  },
+]
+
+/** SEO department count cards (lead-session funnel). */
+export const SEO_FUNNEL_DEFS = [
+  {
+    key: 'leads',
+    label: 'Leads',
+    tooltip: 'Lead sessions from Google My Business, Organic SEO, or ChatGPT.',
+    format: v => (v == null ? '—' : Number(v).toLocaleString('en-US')),
+    lowerIsBetter: false,
+  },
+  {
+    key: 'deals',
+    label: 'Deals',
+    tooltip: 'SEO leads in this period that have a linked deal.',
+    format: v => (v == null ? '—' : Number(v).toLocaleString('en-US')),
+    lowerIsBetter: false,
+  },
+  {
+    key: 'wins',
+    label: 'Wins',
+    tooltip: 'SEO deals from this period whose status is won.',
+    format: v => (v == null ? '—' : Number(v).toLocaleString('en-US')),
+    lowerIsBetter: false,
+  },
+  ...FUNNEL_RATE_DEFS,
+]
+
 /** Distinct stroke colors for chart series (cycle if needed); varied hues for quick differentiation. */
 export const CHART_METRIC_COLORS = [
   '#08447F',

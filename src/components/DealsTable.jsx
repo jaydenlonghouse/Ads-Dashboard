@@ -18,9 +18,19 @@ import { DealPlatformIcons } from './PlatformLogos.jsx'
 /** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus' | 'lostReason'} SortKey */
 
 /**
- * @param {{ deals: Array<{ id: string, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, date?: string|null, platforms?: ('google'|'meta')[] }>, isLoading?: boolean }} props
+ * @param {{
+ *   deals: Array<{ id: string, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, date?: string|null, platforms?: ('google'|'meta')[] }>,
+ *   isLoading?: boolean,
+ *   embedded?: boolean,
+ *   emptyMessage?: string,
+ * }} props
  */
-export default function DealsTable({ deals, isLoading = false }) {
+export default function DealsTable({
+  deals,
+  isLoading = false,
+  embedded = false,
+  emptyMessage = 'No linked deals in this period.',
+}) {
   const [sortKey, setSortKey] = useState(/** @type {SortKey} */ ('businessName'))
   const [sortDir, setSortDir] = useState(/** @type {'asc' | 'desc'} */ ('asc'))
 
@@ -40,8 +50,8 @@ export default function DealsTable({ deals, isLoading = false }) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-brand-100 bg-white p-5">
-        <div className="mb-3 h-5 w-32 animate-pulse rounded bg-brand-100" />
+      <div className={embedded ? '' : 'rounded-xl border border-brand-100 bg-white p-5'}>
+        {!embedded ? <div className="mb-3 h-5 w-32 animate-pulse rounded bg-brand-100" /> : null}
         <div className="space-y-2">
           {[1, 2, 3, 4].map(n => (
             <div key={n} className="h-10 animate-pulse rounded-lg bg-brand-50" />
@@ -51,16 +61,11 @@ export default function DealsTable({ deals, isLoading = false }) {
     )
   }
 
-  return (
-    <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
-      <h2 className="text-base font-semibold text-brand-800 leading-[1.2] mb-1">Deals</h2>
-      <p className="text-xs text-ink-400 mb-4 leading-[1.45]">
-        Linked from advertising metrics in the selected date range and platform filter.
-      </p>
-
+  const table = (
+    <>
       {deals.length === 0 ? (
         <p className="rounded-lg border border-dashed border-brand-200 bg-brand-50 px-4 py-8 text-center text-sm text-ink-500">
-          No linked deals in this period.
+          {emptyMessage}
         </p>
       ) : (
         <div className="-mx-5 overflow-x-auto overscroll-x-contain px-5">
@@ -128,6 +133,18 @@ export default function DealsTable({ deals, isLoading = false }) {
           </table>
         </div>
       )}
+    </>
+  )
+
+  if (embedded) return table
+
+  return (
+    <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
+      <h2 className="mb-1 text-base font-semibold leading-[1.2] text-brand-800">Deals</h2>
+      <p className="mb-4 text-xs leading-[1.45] text-ink-400">
+        Linked from advertising metrics in the selected date range and platform filter.
+      </p>
+      {table}
     </section>
   )
 }

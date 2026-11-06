@@ -51,3 +51,7 @@ export function fetchAllRecords(accessToken) {
 export function fetchAllDeals(accessToken) {
   return apiGet('/api/deals', accessToken)
 }
+
+export function fetchAllLeadSessions(accessToken) {
+  return apiGet('/api/lead-sessions', accessToken)
+}

@@ -6,6 +6,8 @@ const PAT = process.env.AIRTABLE_PAT
 const BASE_ID = process.env.AIRTABLE_BASE_ID
 const TABLE = process.env.AIRTABLE_TABLE_NAME
 const DEALS_TABLE = process.env.AIRTABLE_DEALS_TABLE_NAME
+const LEAD_SESSIONS_TABLE =
+  process.env.AIRTABLE_LEAD_SESSIONS_TABLE_NAME || 'Lead Sessions'
 
 function assertAirtableEnv() {
   const missing = []
@@ -66,10 +68,19 @@ function parseAirtableCtrRaw(value) {
   return Number.isFinite(n) ? n : null
 }
 
+function pickLinkedRecordIds(value) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map(item => {
+      if (typeof item === 'string' && item.length > 0) return item
+      if (item && typeof item === 'object' && typeof item.id === 'string') return item.id
+      return null
+    })
+    .filter(Boolean)
+}
+
 function pickLinkedDealIds(fields) {
-  const raw = fields['Deals']
-  if (!Array.isArray(raw)) return []
-  return raw.filter(id => typeof id === 'string' && id.length > 0)
+  return pickLinkedRecordIds(fields['Deals'])
 }
 
 function pickDealsFromFields(fields) {
@@ -189,6 +200,83 @@ function normaliseDeal(record) {
   }
 }
 
+function pickFirstField(fields, candidates, mapValue) {
+  for (const key of candidates) {
+    if (Object.prototype.hasOwnProperty.call(fields, key)) {
+      const mapped = mapValue(fields[key])
+      if (mapped != null && mapped !== '') return mapped
+    }
+  }
+  const wanted = new Set(candidates.map(k => k.trim().toLowerCase()))
+  for (const name of Object.keys(fields)) {
+    if (!wanted.has(name.trim().toLowerCase())) continue
+    const mapped = mapValue(fields[name])
+    if (mapped != null && mapped !== '') return mapped
+  }
+  return null
+}
+
+function pickSessionDateFromFields(fields) {
+  return pickFirstField(
+    fields,
+    ['Date', 'Session Date', 'Created', 'Created Time'],
+    value => {
+      if (value == null || value === '') return null
+      const s = String(value).trim()
+      return s || null
+    },
+  )
+}
+
+function pickSessionSourceFromFields(fields) {
+  return (
+    pickFirstField(fields, ['Source', 'Lead Source', 'UTM Source'], value =>
+      pickAirtableSelectValue(value),
+    ) ?? 'Unknown'
+  )
+}
+
+function pickSessionNameFromFields(fields) {
+  return (
+    pickFirstField(
+      fields,
+      ['Name', 'Full Name', 'Business Name', 'Lead Name'],
+      value => {
+        if (value == null || value === '') return null
+        if (typeof value === 'string') {
+          const s = value.trim()
+          return s || null
+        }
+        return pickAirtableSelectValue(value)
+      },
+    ) ?? '—'
+  )
+}
+
+function pickSessionLinkedDealIds(fields) {
+  const fromNamed = pickFirstField(fields, ['Deals', 'Deal'], pickLinkedRecordIds)
+  if (fromNamed?.length) return fromNamed
+  for (const name of Object.keys(fields)) {
+    const norm = name.trim().toLowerCase()
+    if (norm === 'deals' || norm === 'deal') {
+      const ids = pickLinkedRecordIds(fields[name])
+      if (ids.length) return ids
+    }
+  }
+  return []
+}
+
+function normaliseLeadSession(record) {
+  const f = record.fields ?? {}
+  return {
+    id: record.id,
+    date: pickSessionDateFromFields(f),
+    source: pickSessionSourceFromFields(f),
+    name: pickSessionNameFromFields(f),
+    linkedDealIds: pickSessionLinkedDealIds(f),
+  }
+}
+
 function pickLostReasonFromFields(fields) {
   const candidates = [
     'Lost Reasons',
@@ -250,5 +338,11 @@ export async function fetchAllDeals() {
   return fetchAllFromTable(DEALS_TABLE, {
     sortField: 'Business Name',
     mapRecord: normaliseDeal,
+  })
+}
+
+export async function fetchAllLeadSessions() {
+  return fetchAllFromTable(LEAD_SESSIONS_TABLE, {
+    mapRecord: normaliseLeadSession,
   })
 }

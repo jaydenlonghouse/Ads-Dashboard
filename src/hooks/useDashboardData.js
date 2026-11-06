@@ -13,7 +13,7 @@
  *   deltas,                // each KPI key → { value, direction }
  *   monthlyTrendData,      // buckets inside selected range: [{ label, spend, ctr, … }] oldest→newest
  *   filteredRows,          // raw rows for the current period (data grid)
- *   periodDeals,           // linked Deals rows for the current period
+ *   ads/seo funnel sessions, deals, wins, and comparison counts
  *   availablePlatforms,    // string[] derived from the dataset
  * }
  *
@@ -25,9 +25,14 @@
 
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchAllRecords, fetchAllDeals } from '../lib/apiClient.js'
-import { MOCK_RECORDS, MOCK_DEALS } from '../utils/mockData.js'
-import { getDealsForMetricRows } from '../utils/dealsUtils.js'
+import { fetchAllRecords, fetchAllDeals, fetchAllLeadSessions } from '../lib/apiClient.js'
+import { MOCK_RECORDS, MOCK_DEALS, MOCK_LEAD_SESSIONS } from '../utils/mockData.js'
+import {
+  filterSessionsByDepartment,
+  funnelCounts,
+  getDealsForSessions,
+  getWonDeals,
+} from '../utils/leadSessionsUtils.js'
 import {
   filterByDateRange,
   filterByPlatform,
@@ -54,6 +59,14 @@ async function loadDeals(accessToken) {
     return MOCK_DEALS
   }
   return fetchAllDeals(accessToken)
+}
+
+async function loadLeadSessions(accessToken) {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 400))
+    return MOCK_LEAD_SESSIONS
+  }
+  return fetchAllLeadSessions(accessToken)
 }
 
 export function useDashboardData({ dateRange, platformFilter }) {
@@ -85,9 +98,21 @@ export function useDashboardData({ dateRange, platformFilter }) {
     staleTime: 5 * 60 * 1000,
   })
 
-  const isLoading = !dataEnabled || metricsLoading || dealsLoading
-  const isError = metricsError || dealsError
-  const error = metricsErrorObj ?? dealsErrorObj
+  const {
+    data: allLeadSessions = [],
+    isLoading: sessionsLoading,
+    isError: sessionsError,
+    error: sessionsErrorObj,
+  } = useQuery({
+    queryKey:  ['airtable-lead-sessions', accessToken],
+    queryFn:   () => loadLeadSessions(accessToken),
+    enabled:   dataEnabled,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const isLoading = !dataEnabled || metricsLoading || dealsLoading || sessionsLoading
+  const isError = metricsError || dealsError || sessionsError
+  const error = metricsErrorObj ?? dealsErrorObj ?? sessionsErrorObj
 
   // ── 2. Derive available platforms from the live dataset ───────────────────
   const availablePlatforms = [...new Set(allRecords.map(r => r.platform))].sort()
@@ -121,11 +146,37 @@ export function useDashboardData({ dateRange, platformFilter }) {
     ])
   )
 
-  // ── 7. Trend chart — sub-ranges inside the selected date range only, oldest → newest
-  const periodDeals = useMemo(
-    () => getDealsForMetricRows(currentRows, allDeals),
-    [currentRows, allDeals],
+  // ── 7. Lead sessions (Ads vs SEO) by session date ─────────────────────────
+  const currentSessions = filterByDateRange(allLeadSessions, start, end)
+  const previousSessions = filterByDateRange(allLeadSessions, prevStart, prevEnd)
+
+  const adsCurrentSessions = filterSessionsByDepartment(currentSessions, 'ads')
+  const seoCurrentSessions = filterSessionsByDepartment(currentSessions, 'seo')
+  const adsPreviousSessions = filterSessionsByDepartment(previousSessions, 'ads')
+  const seoPreviousSessions = filterSessionsByDepartment(previousSessions, 'seo')
+
+  const adsFunnel = funnelCounts(adsCurrentSessions, allDeals)
+  const seoFunnel = funnelCounts(seoCurrentSessions, allDeals)
+  const adsFunnelPrev = funnelCounts(adsPreviousSessions, allDeals)
+  const seoFunnelPrev = funnelCounts(seoPreviousSessions, allDeals)
+
+  const adsFunnelDeltas = Object.fromEntries(
+    Object.keys(adsFunnel).map(key => [key, calcDelta(adsFunnel[key], adsFunnelPrev[key])]),
   )
+  const seoFunnelDeltas = Object.fromEntries(
+    Object.keys(seoFunnel).map(key => [key, calcDelta(seoFunnel[key], seoFunnelPrev[key])]),
+  )
+
+  const adsPeriodDeals = useMemo(
+    () => getDealsForSessions(adsCurrentSessions, allDeals),
+    [adsCurrentSessions, allDeals],
+  )
+  const seoPeriodDeals = useMemo(
+    () => getDealsForSessions(seoCurrentSessions, allDeals),
+    [seoCurrentSessions, allDeals],
+  )
+  const adsPeriodWins = useMemo(() => getWonDeals(adsPeriodDeals), [adsPeriodDeals])
+  const seoPeriodWins = useMemo(() => getWonDeals(seoPeriodDeals), [seoPeriodDeals])
 
   const monthlyTrendData = getTrendBucketsWithinSelectedRange({ start, end }).map(
     ({ start: ws, end: we }) => {
@@ -151,7 +202,16 @@ export function useDashboardData({ dateRange, platformFilter }) {
     deltas,
     monthlyTrendData,
     filteredRows:       currentRows,
-    periodDeals,
+    adsCurrentSessions,
+    seoCurrentSessions,
+    adsPeriodDeals,
+    seoPeriodDeals,
+    adsPeriodWins,
+    seoPeriodWins,
+    adsFunnel,
+    seoFunnel,
+    adsFunnelDeltas,
+    seoFunnelDeltas,
     availablePlatforms,
     prevStart,
     prevEnd,

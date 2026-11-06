@@ -16,6 +16,7 @@ const PLATFORM_TABS = [
 
 /**
  * @param {object} props
+ * @param {'ads' | 'seo'} [props.department]
  * @param {string} props.platformTab
  * @param {(id: string) => void} props.onPlatformChange
  * @param {string} props.dateSummary
@@ -24,6 +25,7 @@ const PLATFORM_TABS = [
  * @param {object} props.datePickerProps — passed to DateRangePicker
  */
 export default function MobileBottomBar({
+  department = 'ads',
   platformTab,
   onPlatformChange,
   dateSummary,
@@ -32,6 +34,10 @@ export default function MobileBottomBar({
   datePickerProps,
 }) {
   const [activePanel, setActivePanel] = useState(null)
+
+  useEffect(() => {
+    if (department !== 'ads' && activePanel === 'platform') setActivePanel(null)
+  }, [department, activePanel])
 
   useEffect(() => {
     if (!activePanel) return undefined
@@ -81,7 +87,7 @@ export default function MobileBottomBar({
         </div>
       ) : null}
 
-      {activePanel === 'platform' ? (
+      {department === 'ads' && activePanel === 'platform' ? (
         <div
           className="fixed inset-x-3 z-[110] bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] rounded-xl border border-brand-100 bg-white p-3 shadow-2xl md:hidden"
           role="dialog"
@@ -123,7 +129,11 @@ export default function MobileBottomBar({
         className="fixed inset-x-0 bottom-0 z-[120] border-t border-brand-100 bg-white/95 shadow-[0_-4px_24px_rgba(2,22,61,0.08)] backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)] md:hidden"
         aria-label="Dashboard controls"
       >
-        <div className="mx-auto grid max-w-lg grid-cols-3 divide-x divide-brand-100">
+        <div
+          className={`mx-auto grid max-w-lg divide-x divide-brand-100 ${
+            department === 'ads' ? 'grid-cols-3' : 'grid-cols-2'
+          }`}
+        >
           <BarButton
             label="Ask"
             active={false}
@@ -146,14 +156,16 @@ export default function MobileBottomBar({
             <Calendar size={20} className="shrink-0" aria-hidden />
           </BarButton>
 
-          <BarButton
-            label="Platform"
-            sublabel={platformShort}
-            active={activePanel === 'platform'}
-            onClick={() => toggle('platform')}
-          >
-            <LayoutGrid size={20} className="shrink-0" aria-hidden />
-          </BarButton>
+          {department === 'ads' ? (
+            <BarButton
+              label="Platform"
+              sublabel={platformShort}
+              active={activePanel === 'platform'}
+              onClick={() => toggle('platform')}
+            >
+              <LayoutGrid size={20} className="shrink-0" aria-hidden />
+            </BarButton>
+          ) : null}
         </div>
       </nav>
     </>

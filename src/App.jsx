@@ -3,7 +3,8 @@
  *
  * Root component.  Owns user-controlled state:
  *   - dateRange    { start: Date, end: Date }
- *   - platformTab  'All' | 'Google' | 'Meta'
+ *   - department   'ads' | 'seo'
+ *   - platformTab  'All' | 'Google' | 'Meta' (Ads view)
  *   - chartMetricKeys  KPI keys shown on the trend chart (may be empty)
  */
 
@@ -21,16 +22,17 @@ import {
   clampDateRangeToDataEarliest,
 } from './utils/dateUtils.js'
 import { buildAdvertisingQuestionGmailUrl } from './utils/advertisingQuestionEmail.js'
-import { KPI_DEFS, DEFAULT_CHART_METRIC_KEYS } from './config/kpiConfig.js'
+import { KPI_DEFS, DEFAULT_CHART_METRIC_KEYS, SEO_FUNNEL_DEFS, FUNNEL_RATE_DEFS } from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
 
 import DateRangePicker from './components/DateRangePicker.jsx'
+import DepartmentFilter from './components/DepartmentFilter.jsx'
 import PlatformFilter from './components/PlatformFilter.jsx'
 import MobileBottomBar from './components/MobileBottomBar.jsx'
 import KpiCard from './components/KpiCard.jsx'
 import KpiMetricMobileSheet from './components/KpiMetricMobileSheet.jsx'
 import TrendChart from './components/TrendChart.jsx'
-import DealsTable from './components/DealsTable.jsx'
+import FunnelTableSection from './components/FunnelTableSection.jsx'
 import longhouseAdvertisingLogo from './assets/longhouse-advertising-logo.svg'
 
 export default function App() {
@@ -40,6 +42,7 @@ export default function App() {
   const [calendarMonth, setCalendarMonth] = useState(now.getMonth() + 1)
   const [calendarYear, setCalendarYear] = useState(now.getFullYear())
   const [platformTab, setPlatformTab] = useState('All')
+  const [department, setDepartment] = useState(/** @type {'ads' | 'seo'} */ ('ads'))
   const [chartMetricKeys, setChartMetricKeys] = useState(() => [...DEFAULT_CHART_METRIC_KEYS])
   const [metricSheet, setMetricSheet] = useState(null)
 
@@ -88,7 +91,16 @@ export default function App() {
     previousPeriodTotals,
     deltas,
     monthlyTrendData,
-    periodDeals,
+    adsCurrentSessions,
+    seoCurrentSessions,
+    adsPeriodDeals,
+    seoPeriodDeals,
+    adsPeriodWins,
+    seoPeriodWins,
+    adsFunnel,
+    adsFunnelDeltas,
+    seoFunnel,
+    seoFunnelDeltas,
     prevStart,
     prevEnd,
   } = useDashboardData({
@@ -126,7 +138,8 @@ export default function App() {
     platformLabel,
   ])
 
-  const askQuestionDisabled = !askQuestionGmailUrl
+  const askQuestionDisabled = department !== 'ads' || !askQuestionGmailUrl
+  const isAds = department === 'ads'
 
   const mobileDateSummary = format(dateRange.start, 'MMM d') + ' – ' + format(dateRange.end, 'MMM d')
 
@@ -144,15 +157,16 @@ export default function App() {
     <div className="min-h-screen overflow-x-hidden bg-brand-50">
       <header className="sticky top-0 z-[100] border-b border-brand-950/40 bg-brand-800 px-4 py-3 shadow-sm sm:px-6">
         <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 max-w-full shrink-0">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
             <img
               src={longhouseAdvertisingLogo}
               alt="Longhouse Advertising"
-              className="h-9 w-auto max-w-full object-left object-contain sm:h-10 md:max-w-[min(100%,28rem)]"
+              className="h-9 w-auto max-w-full object-left object-contain sm:h-10 md:max-w-[min(100%,22rem)]"
               width={1920}
               height={374}
               decoding="async"
             />
+            <DepartmentFilter selected={department} onChange={setDepartment} />
           </div>
 
           <div className="hidden min-w-0 flex-wrap items-center justify-end gap-2 md:flex md:gap-3">
@@ -198,7 +212,7 @@ export default function App() {
         )}
 
         <div className="hidden w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2 md:flex">
-          <PlatformFilter selected={platformTab} onChange={setPlatformTab} />
+          {isAds ? <PlatformFilter selected={platformTab} onChange={setPlatformTab} /> : null}
           {!isLoading && (
             <p className="w-full min-w-0 text-xs leading-[1.45] text-ink-500 sm:ml-auto sm:w-auto sm:max-w-[min(100%,22rem)] sm:text-right">
               {formatDateRange(dateRange.start, dateRange.end)} vs. Comparison Period
@@ -212,79 +226,136 @@ export default function App() {
           </p>
         )}
 
-        {isLoading ? (
-          <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
-            {KPI_DEFS.map(d => (
-              <div key={d.key} className="bg-white rounded-xl border border-brand-100 p-4 animate-pulse h-24" />
-            ))}
-          </div>
+        {isAds ? (
+          <>
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
+                {KPI_DEFS.map(d => (
+                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
+                {KPI_DEFS.map(d => (
+                  <KpiCard
+                    key={d.key}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(currentPeriodTotals[d.key])}
+                    valueSuffix={
+                      d.key === 'cpd'
+                        ? `(${Number(currentPeriodTotals.deals ?? 0).toLocaleString('en-US')})`
+                        : undefined
+                    }
+                    delta={deltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                    chartSelected={chartMetricKeys.includes(d.key)}
+                    onCardActivate={() => {
+                      if (isMobile) {
+                        setMetricSheet({ key: d.key, label: d.label, tooltip: d.tooltip })
+                      } else {
+                        toggleChartMetric(d.key)
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3">
+                {FUNNEL_RATE_DEFS.map(d => (
+                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3">
+                {FUNNEL_RATE_DEFS.map(d => (
+                  <KpiCard
+                    key={d.key}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(adsFunnel[d.key])}
+                    delta={adsFunnelDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+              </div>
+            )}
+
+            <KpiMetricMobileSheet
+              open={Boolean(metricSheet)}
+              metricLabel={metricSheet?.label ?? ''}
+              tooltip={metricSheet?.tooltip ?? ''}
+              isOnChart={metricSheet ? chartMetricKeys.includes(metricSheet.key) : false}
+              onClose={() => setMetricSheet(null)}
+              onAddToChart={() => {
+                if (metricSheet) addChartMetric(metricSheet.key)
+              }}
+              onRemoveFromChart={() => {
+                if (metricSheet) removeChartMetric(metricSheet.key)
+              }}
+            />
+
+            <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
+              <h2 className="mb-1 text-base font-semibold leading-[1.2] text-brand-800">
+                Metric trend (selected range).
+              </h2>
+              <p className="mb-4 text-xs leading-[1.45] text-ink-400 md:hidden">
+                The chart splits your current date filter into daily segments (or fewer wide segments for
+                long ranges). Tap a KPI card for a short definition, then add it to the chart.
+              </p>
+              <p className="mb-4 hidden text-xs leading-[1.45] text-ink-400 md:block">
+                The chart splits your current date filter into daily segments (or fewer wide segments for
+                long ranges). Click KPI cards to add or remove lines from the chart.
+              </p>
+              {isLoading ? (
+                <div className="h-64 animate-pulse rounded-lg bg-brand-50" />
+              ) : (
+                <TrendChart data={monthlyTrendData} selectedMetricKeys={chartKeysOrdered} />
+              )}
+            </section>
+          </>
         ) : (
-          <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
-            {KPI_DEFS.map(d => (
-              <KpiCard
-                key={d.key}
-                isMobile={isMobile}
-                label={d.label}
-                tooltip={d.tooltip}
-                value={d.format(currentPeriodTotals[d.key])}
-                valueSuffix={
-                  d.key === 'cpd'
-                    ? `(${Number(currentPeriodTotals.deals ?? 0).toLocaleString('en-US')})`
-                    : undefined
-                }
-                delta={deltas[d.key]}
-                lowerIsBetter={d.lowerIsBetter}
-                chartSelected={chartMetricKeys.includes(d.key)}
-                onCardActivate={() => {
-                  if (isMobile) {
-                    setMetricSheet({ key: d.key, label: d.label, tooltip: d.tooltip })
-                  } else {
-                    toggleChartMetric(d.key)
-                  }
-                }}
-              />
-            ))}
-          </div>
+          <>
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
+                {SEO_FUNNEL_DEFS.map(d => (
+                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
+                {SEO_FUNNEL_DEFS.map(d => (
+                  <KpiCard
+                    key={d.key}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(seoFunnel[d.key])}
+                    delta={seoFunnelDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        <KpiMetricMobileSheet
-          open={Boolean(metricSheet)}
-          metricLabel={metricSheet?.label ?? ''}
-          tooltip={metricSheet?.tooltip ?? ''}
-          isOnChart={metricSheet ? chartMetricKeys.includes(metricSheet.key) : false}
-          onClose={() => setMetricSheet(null)}
-          onAddToChart={() => {
-            if (metricSheet) addChartMetric(metricSheet.key)
-          }}
-          onRemoveFromChart={() => {
-            if (metricSheet) removeChartMetric(metricSheet.key)
-          }}
+        <FunnelTableSection
+          department={department}
+          leads={isAds ? adsCurrentSessions : seoCurrentSessions}
+          deals={isAds ? adsPeriodDeals : seoPeriodDeals}
+          wins={isAds ? adsPeriodWins : seoPeriodWins}
+          isLoading={isLoading}
         />
-
-        <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
-          <h2 className="text-base font-semibold text-brand-800 leading-[1.2] mb-1">
-            Metric trend (selected range).
-          </h2>
-          <p className="text-xs text-ink-400 mb-4 leading-[1.45] md:hidden">
-            The chart splits your current date filter into daily segments (or fewer wide segments for
-            long ranges). Tap a KPI card for a short definition, then add it to the chart.
-          </p>
-          <p className="text-xs text-ink-400 mb-4 leading-[1.45] hidden md:block">
-            The chart splits your current date filter into daily segments (or fewer wide segments for
-            long ranges). Click KPI cards to add or remove lines from the chart.
-          </p>
-          {isLoading ? (
-            <div className="h-64 animate-pulse bg-brand-50 rounded-lg" />
-          ) : (
-            <TrendChart data={monthlyTrendData} selectedMetricKeys={chartKeysOrdered} />
-          )}
-        </section>
-
-        <DealsTable deals={periodDeals} isLoading={isLoading} />
       </main>
 
       {isMobile ? (
         <MobileBottomBar
+          department={department}
           platformTab={platformTab}
           onPlatformChange={setPlatformTab}
           dateSummary={mobileDateSummary}

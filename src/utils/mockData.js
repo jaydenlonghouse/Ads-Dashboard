@@ -62,4 +62,18 @@ export const MOCK_DEALS = [
   { id: 'rec_mock_2', date: '2024-11-10', businessName: 'Harbor View Dental', dealStage: 'Consideration & Follow up', dealStatus: 'active', lostReason: null },
   { id: 'rec_mock_3', date: '2024-11-12', businessName: 'Northline HVAC', dealStage: 'Proposal', dealStatus: 'won', lostReason: null },
   { id: 'rec_mock_4', date: '2024-11-04', businessName: 'Cedar Creek Realty', dealStage: 'Closed', dealStatus: 'lost', lostReason: 'Budget' },
+  { id: 'rec_mock_5', date: '2024-11-18', businessName: 'Pine & Oak Interiors', dealStage: 'Discovery', dealStatus: 'open', lostReason: null },
+  { id: 'rec_mock_6', date: '2024-11-20', businessName: 'Westside Veterinary', dealStage: 'Proposal', dealStatus: 'won', lostReason: null },
+]
+
+export const MOCK_LEAD_SESSIONS = [
+  { id: 'ls_1', date: '2024-11-10', source: 'Google Ads', name: 'Harbor View Dental', linkedDealIds: ['rec_mock_2'] },
+  { id: 'ls_2', date: '2024-11-12', source: 'Meta Ads', name: 'Northline HVAC', linkedDealIds: ['rec_mock_3'] },
+  { id: 'ls_3', date: '2024-11-04', source: 'Google Ads', name: 'Cedar Creek Realty', linkedDealIds: ['rec_mock_4'] },
+  { id: 'ls_4', date: '2024-11-08', source: 'Meta Ads', name: 'Summit Outdoor Co.', linkedDealIds: ['rec_mock_1'] },
+  { id: 'ls_5', date: '2024-11-15', source: 'Google Ads', name: 'Lakeside Cafe', linkedDealIds: [] },
+  { id: 'ls_6', date: '2024-11-18', source: 'Organic SEO', name: 'Pine & Oak Interiors', linkedDealIds: ['rec_mock_5'] },
+  { id: 'ls_7', date: '2024-11-20', source: 'Google My Business', name: 'Westside Veterinary', linkedDealIds: ['rec_mock_6'] },
+  { id: 'ls_8', date: '2024-11-22', source: 'ChatGPT', name: 'Riverbend Accounting', linkedDealIds: [] },
+  { id: 'ls_9', date: '2024-10-20', source: 'Organic SEO', name: 'Maple Street Bakery', linkedDealIds: [] },
 ]

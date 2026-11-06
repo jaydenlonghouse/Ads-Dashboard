@@ -82,6 +82,7 @@ Sign-in uses `hd=longhouse.co` (Workspace hint) plus app and API checks that the
 | `AIRTABLE_BASE_ID` | Base ID from the Airtable URL |
 | `AIRTABLE_TABLE_NAME` | Metrics table name |
 | `AIRTABLE_DEALS_TABLE_NAME` | Deals table name |
+| `AIRTABLE_LEAD_SESSIONS_TABLE_NAME` | Lead Sessions table name (default `Lead Sessions`) |
 | `SUPABASE_URL` | Same as `VITE_SUPABASE_URL` |
 | `SUPABASE_ANON_KEY` | Same as `VITE_SUPABASE_ANON_KEY` |
 | `ALLOWED_EMAIL_DOMAIN` | Optional; default `longhouse.co` |
@@ -92,7 +93,7 @@ Sign-in uses `hd=longhouse.co` (Workspace hint) plus app and API checks that the
    - Scopes: `data.records:read`
    - Access: your base
 2. Find your Base ID in the URL: `https://airtable.com/appXXXXXXXX/...`
-3. Set `AIRTABLE_TABLE_NAME` and `AIRTABLE_DEALS_TABLE_NAME` to match your base
+3. Set `AIRTABLE_TABLE_NAME`, `AIRTABLE_DEALS_TABLE_NAME`, and `AIRTABLE_LEAD_SESSIONS_TABLE_NAME` to match your base
 
 ### Required Airtable Columns
 
@@ -115,6 +116,7 @@ Optional: **CTR** (Number or Percent) — used when totals cannot be derived fro
 api/
 ├── records.js              # GET metrics (auth + Airtable)
 ├── deals.js                # GET deals (auth + Airtable)
+├── lead-sessions.js        # GET lead sessions (auth + Airtable)
 └── _lib/
     ├── verifyAuth.js       # Supabase JWT + @longhouse.co check
     └── airtable.js         # Server-side Airtable client
