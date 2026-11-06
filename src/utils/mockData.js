@@ -67,13 +67,13 @@ export const MOCK_DEALS = [
 ]
 
 export const MOCK_LEAD_SESSIONS = [
-  { id: 'ls_1', date: '2024-11-10', source: 'Google Ads', name: 'Harbor View Dental', entryUrl: null, linkedDealIds: ['rec_mock_2'] },
-  { id: 'ls_2', date: '2024-11-12', source: 'Meta Ads', name: 'Northline HVAC', entryUrl: null, linkedDealIds: ['rec_mock_3'] },
-  { id: 'ls_3', date: '2024-11-04', source: 'Google Ads', name: 'Cedar Creek Realty', entryUrl: null, linkedDealIds: ['rec_mock_4'] },
-  { id: 'ls_4', date: '2024-11-08', source: 'Meta Ads', name: 'Summit Outdoor Co.', entryUrl: null, linkedDealIds: ['rec_mock_1'] },
-  { id: 'ls_5', date: '2024-11-15', source: 'ChatGPT Ads', name: 'Lakeside Cafe', entryUrl: null, linkedDealIds: [] },
-  { id: 'ls_6', date: '2024-11-18', source: 'Organic SEO', name: 'Pine & Oak Interiors', entryUrl: 'https://longhouse.co/interior-design', linkedDealIds: ['rec_mock_5'] },
-  { id: 'ls_7', date: '2024-11-20', source: 'Google My Business', name: 'Westside Veterinary', entryUrl: 'https://longhouse.co/veterinary', linkedDealIds: ['rec_mock_6'] },
-  { id: 'ls_8', date: '2024-11-22', source: 'ChatGPT', name: 'Riverbend Accounting', entryUrl: 'https://longhouse.co/accounting', linkedDealIds: [] },
-  { id: 'ls_9', date: '2024-10-20', source: 'Organic SEO', name: 'Maple Street Bakery', entryUrl: 'https://longhouse.co/bakery', linkedDealIds: [] },
+  { id: 'ls_1', date: '2024-11-10', conversionDate: '2024-11-10', source: 'Google Ads', name: 'Harbor View Dental', entryUrl: null, linkedDealIds: ['rec_mock_2'] },
+  { id: 'ls_2', date: '2024-11-12', conversionDate: '2024-11-12', source: 'Meta Ads', name: 'Northline HVAC', entryUrl: null, linkedDealIds: ['rec_mock_3'] },
+  { id: 'ls_3', date: '2024-11-04', conversionDate: '2024-11-04', source: 'Google Ads', name: 'Cedar Creek Realty', entryUrl: null, linkedDealIds: ['rec_mock_4'] },
+  { id: 'ls_4', date: '2024-11-08', conversionDate: '2024-11-08', source: 'Meta Ads', name: 'Summit Outdoor Co.', entryUrl: null, linkedDealIds: ['rec_mock_1'] },
+  { id: 'ls_5', date: '2024-11-15', conversionDate: '2024-11-15', source: 'ChatGPT Ads', name: 'Lakeside Cafe', entryUrl: null, linkedDealIds: [] },
+  { id: 'ls_6', date: '2024-11-18', conversionDate: '2024-11-18', source: 'Organic SEO', name: 'Pine & Oak Interiors', entryUrl: 'https://longhouse.co/interior-design', linkedDealIds: ['rec_mock_5'] },
+  { id: 'ls_7', date: '2024-11-20', conversionDate: '2024-11-20', source: 'Google My Business', name: 'Westside Veterinary', entryUrl: 'https://longhouse.co/veterinary', linkedDealIds: ['rec_mock_6'] },
+  { id: 'ls_8', date: '2024-11-22', conversionDate: '2024-11-22', source: 'ChatGPT', name: 'Riverbend Accounting', entryUrl: 'https://longhouse.co/accounting', linkedDealIds: [] },
+  { id: 'ls_9', date: '2024-10-20', conversionDate: '2024-10-20', source: 'Organic SEO', name: 'Maple Street Bakery', entryUrl: 'https://longhouse.co/bakery', linkedDealIds: [] },
 ]

@@ -51,6 +51,14 @@ export function isSeoSource(source) {
   return SEO_SOURCE_NEEDLES.some(needle => n === needle || n.includes(needle))
 }
 
+/** Ads leads are dated by the linked conversion; SEO stays on the session date. */
+export function withAdsLeadDate(sessions) {
+  return sessions.map(session => ({
+    ...session,
+    date: session.conversionDate || session.date,
+  }))
+}
+
 /**
  * @param {'ads' | 'seo'} department
  * @param {Array<{ source?: string }>} sessions

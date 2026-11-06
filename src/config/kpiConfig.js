@@ -31,7 +31,7 @@ export const KPI_DEFS = [
   {
     key: 'conversions',
     label: 'Conversions',
-    tooltip: '# of Attributed Form Submissions',
+    tooltip: 'Ads leads from Lead Session Data (Google Ads, Meta Ads, or ChatGPT Ads) in this period.',
     format: v => (v == null ? '—' : Number(v).toLocaleString('en-US')),
     lowerIsBetter: false,
     chartValueKind: CHART_VALUE_KIND.INTEGER,
@@ -39,7 +39,7 @@ export const KPI_DEFS = [
   {
     key: 'conversionRate',
     label: 'CVR',
-    tooltip: 'The conversion rate of users who clicked on an ad.',
+    tooltip: 'Ads leads from Lead Session Data divided by clicks.',
     format: v => formatPercent(v, 2),
     lowerIsBetter: false,
     chartValueKind: CHART_VALUE_KIND.PERCENT,
@@ -47,7 +47,7 @@ export const KPI_DEFS = [
   {
     key: 'cpl',
     label: 'CPL',
-    tooltip: 'Cost per lead (Spend/Conversions).',
+    tooltip: 'Cost per lead (Spend / Ads leads).',
     format: v => formatCurrency(v),
     lowerIsBetter: true,
     chartValueKind: CHART_VALUE_KIND.CURRENCY,

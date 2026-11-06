@@ -82,6 +82,8 @@ export default function DateRangePicker({
   onPresetChange,
   onRangeChange,
   onCalendarMonthYearChange,
+  isSavedDefault = false,
+  onSavedDefaultChange,
   /** @type {'default' | 'sheet'} */
   variant = 'default',
   open: controlledOpen,
@@ -283,15 +285,21 @@ export default function DateRangePicker({
           aria-label="Date range"
           className={
             isSheet
-              ? 'w-full max-h-[min(52vh,420px)] overflow-hidden rounded-xl border border-brand-100 bg-white shadow-2xl'
-              : 'absolute left-0 right-0 z-[90] mt-2 w-full max-w-[calc(100vw-2rem)] rounded-xl border border-brand-100 bg-white shadow-xl sm:left-auto sm:right-0 sm:w-[min(calc(100vw-1.5rem),36rem)]'
+              ? 'flex h-[min(52vh,420px)] w-full flex-col overflow-hidden rounded-xl border border-brand-100 bg-white shadow-2xl'
+              : 'absolute left-0 right-0 z-[90] mt-2 flex w-full max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-brand-100 bg-white shadow-xl sm:left-auto sm:right-0 sm:w-[min(calc(100vw-1.5rem),36rem)]'
           }
         >
           <div
-            className={`flex max-h-[min(70vh,520px)] flex-col ${isSheet ? 'max-h-[min(48vh,400px)]' : 'sm:flex-row sm:max-h-none'}`}
+            className={`flex min-h-0 flex-1 flex-col overflow-hidden ${isSheet ? '' : 'max-h-[min(70vh,520px)] sm:flex-row sm:max-h-none'}`}
           >
             {/* Presets */}
-            <div className="max-h-48 shrink-0 overflow-y-auto border-b border-brand-100 sm:max-h-none sm:w-[11.5rem] sm:border-b-0 sm:border-r sm:border-brand-100">
+            <div
+              className={
+                isSheet
+                  ? 'max-h-40 shrink-0 overflow-y-auto border-b border-brand-100'
+                  : 'max-h-48 shrink-0 overflow-y-auto border-b border-brand-100 sm:max-h-none sm:w-[11.5rem] sm:border-b-0 sm:border-r sm:border-brand-100'
+              }
+            >
               <ul className="py-1">
                 {DATE_PRESET_OPTIONS.map(({ id, label, subLabel }) => (
                   <li key={id}>
@@ -432,6 +440,17 @@ export default function DateRangePicker({
               </div>
             </div>
           </div>
+          {typeof onSavedDefaultChange === 'function' ? (
+            <label className="flex shrink-0 cursor-pointer items-center gap-2 border-t border-brand-100 bg-white px-3 py-2.5 text-xs leading-snug text-ink-600">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 shrink-0 rounded border-brand-200 text-brand-800 focus:ring-brand-500"
+                checked={isSavedDefault}
+                onChange={e => onSavedDefaultChange(e.target.checked)}
+              />
+              <span>Set as my default date range</span>
+            </label>
+          ) : null}
         </div>
       ) : null
 

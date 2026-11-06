@@ -63,18 +63,22 @@ export function calcClicks(records) {
   return sum(records, 'clicks')
 }
 
-export function calcConversions(records) {
+/** Ads lead count — dashboard KPIs use Lead Session Data, not metrics.Conversions. */
+export function calcConversions(records, leadCount) {
+  if (leadCount != null) return coalesceNumber(leadCount)
   return sum(records, 'conversions')
 }
 
-/** CVR = (conversions / clicks) × 100 */
-export function calcConversionRate(records) {
-  return safeDivide(sum(records, 'conversions') * 100, sum(records, 'clicks'))
+/** CVR = (ads leads / clicks) × 100 */
+export function calcConversionRate(records, leadCount) {
+  const conversions = calcConversions(records, leadCount)
+  return safeDivide(conversions * 100, sum(records, 'clicks'))
 }
 
-/** CPL = spend / conversions */
-export function calcCPL(records) {
-  return safeDivide(sum(records, 'spend'), sum(records, 'conversions'))
+/** CPL = spend / ads leads */
+export function calcCPL(records, leadCount) {
+  const conversions = calcConversions(records, leadCount)
+  return safeDivide(sum(records, 'spend'), conversions)
 }
 
 /** CPD = spend / deals */
@@ -91,13 +95,17 @@ export function calcCPW(records) {
 // calcAllKPIs — convenience wrapper returning all metrics at once
 // ---------------------------------------------------------------------------
 export function calcAllKPIs(records, options = {}) {
+  const spend = calcSpend(records)
+  const clicks = calcClicks(records)
+  // Always count Ads Lead Session Data rows. Never sum metrics.Conversions.
+  const conversions = coalesceNumber(options.leadCount)
   return {
-    spend:           calcSpend(records),
+    spend,
     ctr:             calcCTR(records, options),
-    clicks:          calcClicks(records),
-    conversions:     calcConversions(records),
-    conversionRate:  calcConversionRate(records),
-    cpl:             calcCPL(records),
+    clicks,
+    conversions,
+    conversionRate:  safeDivide(conversions * 100, clicks),
+    cpl:             safeDivide(spend, conversions),
     cpd:             calcCPD(records),
     cpw:             calcCPW(records),
     deals:           sum(records, 'deals'),

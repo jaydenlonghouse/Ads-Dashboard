@@ -32,6 +32,7 @@ import {
   funnelCounts,
   getDealsForSessions,
   getWonDeals,
+  withAdsLeadDate,
 } from '../utils/leadSessionsUtils.js'
 import {
   filterByDateRange,
@@ -131,29 +132,46 @@ export function useDashboardData({ dateRange, platformFilter }) {
     platformFilter,
   )
 
-  // ── 5. KPI aggregation ────────────────────────────────────────────────────
+  // ── 5. Lead sessions: Ads by conversion date, SEO by session date ─────────
+  const adsDatedSessions = withAdsLeadDate(allLeadSessions)
+  const adsCurrentSessions = filterSessionsByDepartment(
+    filterByDateRange(adsDatedSessions, start, end),
+    'ads',
+    platformFilter,
+  )
+  const seoCurrentSessions = filterSessionsByDepartment(
+    filterByDateRange(allLeadSessions, start, end),
+    'seo',
+  )
+  const adsPreviousSessions = filterSessionsByDepartment(
+    filterByDateRange(adsDatedSessions, prevStart, prevEnd),
+    'ads',
+    platformFilter,
+  )
+  const seoPreviousSessions = filterSessionsByDepartment(
+    filterByDateRange(allLeadSessions, prevStart, prevEnd),
+    'seo',
+  )
+
+  // ── 6. KPI aggregation — Conversions/CVR/CPL use Ads Lead Session Data ──
   const kpiOpts =
     platformFilter.includes('All') ? { ctrAllPlatformsBlend: true } : {}
 
-  const currentPeriodTotals  = calcAllKPIs(currentRows, kpiOpts)
-  const previousPeriodTotals = calcAllKPIs(previousRows, kpiOpts)
+  const currentPeriodTotals = calcAllKPIs(currentRows, {
+    ...kpiOpts,
+    leadCount: adsCurrentSessions.length,
+  })
+  const previousPeriodTotals = calcAllKPIs(previousRows, {
+    ...kpiOpts,
+    leadCount: adsPreviousSessions.length,
+  })
 
-  // ── 6. Δ% for each metric ─────────────────────────────────────────────────
   const deltas = Object.fromEntries(
     Object.keys(currentPeriodTotals).map(key => [
       key,
       calcDelta(currentPeriodTotals[key], previousPeriodTotals[key]),
-    ])
+    ]),
   )
-
-  // ── 7. Lead sessions (Ads vs SEO) by session date ─────────────────────────
-  const currentSessions = filterByDateRange(allLeadSessions, start, end)
-  const previousSessions = filterByDateRange(allLeadSessions, prevStart, prevEnd)
-
-  const adsCurrentSessions = filterSessionsByDepartment(currentSessions, 'ads', platformFilter)
-  const seoCurrentSessions = filterSessionsByDepartment(currentSessions, 'seo')
-  const adsPreviousSessions = filterSessionsByDepartment(previousSessions, 'ads', platformFilter)
-  const seoPreviousSessions = filterSessionsByDepartment(previousSessions, 'seo')
 
   const adsFunnel = funnelCounts(adsCurrentSessions, allDeals)
   const seoFunnel = funnelCounts(seoCurrentSessions, allDeals)
@@ -184,7 +202,14 @@ export function useDashboardData({ dateRange, platformFilter }) {
         filterByDateRange(allRecords, ws, we),
         platformFilter,
       )
-      const kpis = calcAllKPIs(rows, kpiOpts)
+      const kpis = calcAllKPIs(rows, {
+        ...kpiOpts,
+        leadCount: filterSessionsByDepartment(
+          filterByDateRange(adsDatedSessions, ws, we),
+          'ads',
+          platformFilter,
+        ).length,
+      })
       return {
         label: formatTrendBucketAxisLabel(ws, we),
         labelDetail: formatDateRange(ws, we),

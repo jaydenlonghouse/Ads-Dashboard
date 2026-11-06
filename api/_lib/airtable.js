@@ -8,6 +8,7 @@ const TABLE = process.env.AIRTABLE_TABLE_NAME
 const DEALS_TABLE = process.env.AIRTABLE_DEALS_TABLE_NAME
 const LEAD_SESSIONS_TABLE =
   process.env.AIRTABLE_LEAD_SESSIONS_TABLE_NAME || 'Lead Session Data'
+const CONVERSIONS_TABLE = process.env.AIRTABLE_CONVERSIONS_TABLE_NAME || 'Conversions'
 
 function assertAirtableEnv() {
   const missing = []
@@ -292,6 +293,19 @@ function pickSessionEntryUrlFromFields(fields) {
   )
 }
 
+function pickSessionLinkedConversionIds(fields) {
+  const fromNamed = pickFirstField(fields, ['Linked Conversion', 'Conversion', 'Conversions'], pickLinkedRecordIds)
+  if (fromNamed?.length) return fromNamed
+  for (const name of Object.keys(fields)) {
+    const norm = name.trim().toLowerCase()
+    if (norm === 'linked conversion' || norm === 'conversion' || norm === 'conversions') {
+      const ids = pickLinkedRecordIds(fields[name])
+      if (ids.length) return ids
+    }
+  }
+  return []
+}
+
 function pickSessionLinkedDealIds(fields) {
   const fromNamed = pickFirstField(fields, ['Deals', 'Deal'], pickLinkedRecordIds)
   if (fromNamed?.length) return fromNamed
@@ -310,10 +324,31 @@ function normaliseLeadSession(record) {
   return {
     id: record.id,
     date: pickSessionDateFromFields(f),
+    conversionDate: null,
     source: pickSessionSourceFromFields(f),
     name: pickSessionNameFromFields(f),
     entryUrl: pickSessionEntryUrlFromFields(f),
     linkedDealIds: pickSessionLinkedDealIds(f),
+    linkedConversionIds: pickSessionLinkedConversionIds(f),
+  }
+}
+
+function normaliseConversion(record) {
+  const f = record.fields ?? {}
+  return {
+    id: record.id,
+    date: pickFirstField(f, ['Date', 'Conversion Date', 'Created', 'Created Time'], value => {
+      if (value == null || value === '') return null
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const s = String(item ?? '').trim()
+          if (s) return s
+        }
+        return null
+      }
+      const s = String(value).trim()
+      return s || null
+    }),
   }
 }
 
@@ -382,7 +417,23 @@ export async function fetchAllDeals() {
 }
 
 export async function fetchAllLeadSessions() {
-  return fetchAllFromTable(LEAD_SESSIONS_TABLE, {
-    mapRecord: normaliseLeadSession,
+  const [sessions, conversions] = await Promise.all([
+    fetchAllFromTable(LEAD_SESSIONS_TABLE, {
+      mapRecord: normaliseLeadSession,
+    }),
+    fetchAllFromTable(CONVERSIONS_TABLE, {
+      mapRecord: normaliseConversion,
+    }).catch(() => []),
+  ])
+
+  const dateByConversionId = Object.fromEntries(
+    conversions.filter(c => c.id && c.date).map(c => [c.id, c.date]),
+  )
+
+  return sessions.map(session => {
+    const conversionDate = (session.linkedConversionIds ?? [])
+      .map(id => dateByConversionId[id])
+      .find(Boolean) ?? null
+    return { ...session, conversionDate }
   })
 }

@@ -8,7 +8,7 @@
  *   - chartMetricKeys  KPI keys shown on the trend chart (may be empty)
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { format } from 'date-fns'
 import { AlertCircle, Mail } from 'lucide-react'
 
@@ -21,6 +21,15 @@ import {
   getDateRangeForCalendarMonth,
   clampDateRangeToDataEarliest,
 } from './utils/dateUtils.js'
+import {
+  applyDateDefault,
+  isDateDefaultMatch,
+  persistDateDefault,
+  readBootstrapDateDefault,
+  readDateDefaultFromUser,
+  snapshotDateDefault,
+} from './utils/dateDefaultPreference.js'
+import { useAuth } from './contexts/AuthContext.jsx'
 import { buildAdvertisingQuestionGmailUrl } from './utils/advertisingQuestionEmail.js'
 import { KPI_DEFS, DEFAULT_CHART_METRIC_KEYS, SEO_FUNNEL_DEFS, FUNNEL_RATE_DEFS } from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
@@ -35,18 +44,47 @@ import TrendChart from './components/TrendChart.jsx'
 import FunnelTableSection from './components/FunnelTableSection.jsx'
 import longhouseAdvertisingLogo from './assets/longhouse-advertising-logo.svg'
 
-export default function App() {
+function getInitialDateState() {
   const now = new Date()
-  const [datePresetId, setDatePresetId] = useState(DEFAULT_DATE_PRESET_ID)
-  const [dateRange, setDateRange] = useState(() => getDateRangeForPreset(DEFAULT_DATE_PRESET_ID))
-  const [calendarMonth, setCalendarMonth] = useState(now.getMonth() + 1)
-  const [calendarYear, setCalendarYear] = useState(now.getFullYear())
+  const saved = readBootstrapDateDefault()
+  const applied = applyDateDefault(saved)
+  return {
+    presetId: applied?.presetId ?? DEFAULT_DATE_PRESET_ID,
+    dateRange: applied?.dateRange ?? getDateRangeForPreset(DEFAULT_DATE_PRESET_ID),
+    calendarMonth: applied?.calendarMonth ?? now.getMonth() + 1,
+    calendarYear: applied?.calendarYear ?? now.getFullYear(),
+    saved: applied ? saved : null,
+  }
+}
+
+export default function App() {
+  const { session } = useAuth()
+  const userId = session?.user?.id ?? null
+  const [datePresetId, setDatePresetId] = useState(() => getInitialDateState().presetId)
+  const [dateRange, setDateRange] = useState(() => getInitialDateState().dateRange)
+  const [calendarMonth, setCalendarMonth] = useState(() => getInitialDateState().calendarMonth)
+  const [calendarYear, setCalendarYear] = useState(() => getInitialDateState().calendarYear)
+  const [savedDateDefault, setSavedDateDefault] = useState(() => getInitialDateState().saved)
   const [platformTab, setPlatformTab] = useState('All')
   const [department, setDepartment] = useState(/** @type {'ads' | 'seo'} */ ('ads'))
   const [chartMetricKeys, setChartMetricKeys] = useState(() => [...DEFAULT_CHART_METRIC_KEYS])
   const [metricSheet, setMetricSheet] = useState(null)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
+
+  useEffect(() => {
+    if (!useMockData && !userId) return
+    const pref = readDateDefaultFromUser(session?.user)
+    setSavedDateDefault(pref)
+    const applied = applyDateDefault(pref)
+    if (!applied) return
+    setDatePresetId(applied.presetId)
+    setDateRange(applied.dateRange)
+    if (applied.calendarMonth && applied.calendarYear) {
+      setCalendarMonth(applied.calendarMonth)
+      setCalendarYear(applied.calendarYear)
+    }
+  }, [userId])
 
   const toggleChartMetric = useCallback(key => {
     setChartMetricKeys(prev =>
@@ -143,6 +181,29 @@ export default function App() {
 
   const mobileDateSummary = format(dateRange.start, 'MMM d') + ' – ' + format(dateRange.end, 'MMM d')
 
+  const isSavedDefault = isDateDefaultMatch(savedDateDefault, {
+    presetId: datePresetId,
+    calendarMonth,
+    calendarYear,
+    dateRange,
+  })
+
+  async function handleSavedDefaultChange(checked) {
+    if (!checked) {
+      setSavedDateDefault(null)
+      await persistDateDefault(userId, null)
+      return
+    }
+    const snap = snapshotDateDefault({
+      presetId: datePresetId,
+      calendarMonth,
+      calendarYear,
+      dateRange,
+    })
+    setSavedDateDefault(snap)
+    await persistDateDefault(userId, snap)
+  }
+
   const datePickerProps = {
     presetId: datePresetId,
     dateRange,
@@ -151,6 +212,8 @@ export default function App() {
     onPresetChange: handleDatePresetChange,
     onRangeChange: r => setDateRange(clampDateRangeToDataEarliest(r)),
     onCalendarMonthYearChange: handleCalendarMonthYearChange,
+    isSavedDefault,
+    onSavedDefaultChange: handleSavedDefaultChange,
   }
 
   return (
