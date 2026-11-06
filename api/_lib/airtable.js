@@ -238,18 +238,29 @@ function pickSessionSourceFromFields(fields) {
 
 function pickSessionNameFromFields(fields) {
   return (
-    pickFirstField(
-      fields,
-      ['Name', 'Full Name', 'Business Name', 'Lead Name'],
-      value => {
-        if (value == null || value === '') return null
-        if (typeof value === 'string') {
-          const s = value.trim()
-          return s || null
-        }
-        return pickAirtableSelectValue(value)
-      },
-    ) ?? '—'
+    pickFirstField(fields, ['Business Name', 'Business name'], value => {
+      if (value == null || value === '') return null
+      if (typeof value === 'string') {
+        const s = value.trim()
+        return s || null
+      }
+      return pickAirtableSelectValue(value)
+    }) ?? '—'
+  )
+}
+
+function pickSessionEntryUrlFromFields(fields) {
+  return pickFirstField(
+    fields,
+    ['Entry URL', 'Entry Url', 'EntryURL', 'Entry url', 'Landing Page', 'Landing Page URL'],
+    value => {
+      if (value == null || value === '') return null
+      if (typeof value === 'string') {
+        const s = value.trim()
+        return s || null
+      }
+      return pickAirtableSelectValue(value)
+    },
   )
 }
 
@@ -273,6 +284,7 @@ function normaliseLeadSession(record) {
     date: pickSessionDateFromFields(f),
     source: pickSessionSourceFromFields(f),
     name: pickSessionNameFromFields(f),
+    entryUrl: pickSessionEntryUrlFromFields(f),
     linkedDealIds: pickSessionLinkedDealIds(f),
   }
 }

@@ -5,8 +5,9 @@
 import { useMemo, useState } from 'react'
 
 import { formatDealDate } from '../utils/dealsUtils.js'
+import EntryUrlLink from './EntryUrlLink.jsx'
 
-/** @typedef {'date' | 'name' | 'source'} SortKey */
+/** @typedef {'date' | 'name' | 'source' | 'entryUrl'} SortKey */
 
 function compareLeads(a, b, sortKey, direction) {
   const mult = direction === 'asc' ? 1 : -1
@@ -15,8 +16,10 @@ function compareLeads(a, b, sortKey, direction) {
     const tb = b.date ? Date.parse(b.date) : Number.NEGATIVE_INFINITY
     return mult * ((Number.isFinite(ta) ? ta : Number.NEGATIVE_INFINITY) - (Number.isFinite(tb) ? tb : Number.NEGATIVE_INFINITY))
   }
-  const av = sortKey === 'name' ? a.name ?? '' : a.source ?? ''
-  const bv = sortKey === 'name' ? b.name ?? '' : b.source ?? ''
+  const av =
+    sortKey === 'name' ? a.name ?? '' : sortKey === 'entryUrl' ? a.entryUrl ?? '' : a.source ?? ''
+  const bv =
+    sortKey === 'name' ? b.name ?? '' : sortKey === 'entryUrl' ? b.entryUrl ?? '' : b.source ?? ''
   return (
     mult *
     String(av).localeCompare(String(bv), undefined, { sensitivity: 'base' })
@@ -25,13 +28,15 @@ function compareLeads(a, b, sortKey, direction) {
 
 /**
  * @param {{
- *   leads: Array<{ id: string, date?: string|null, name?: string, source?: string, linkedDealIds?: string[] }>,
+ *   leads: Array<{ id: string, date?: string|null, name?: string, source?: string, entryUrl?: string|null, linkedDealIds?: string[] }>,
  *   emptyMessage?: string,
+ *   showEntryUrl?: boolean,
  * }} props
  */
 export default function LeadsTable({
   leads,
   emptyMessage = 'No leads in this period.',
+  showEntryUrl = false,
 }) {
   const [sortKey, setSortKey] = useState(/** @type {SortKey} */ ('date'))
   const [sortDir, setSortDir] = useState(/** @type {'asc' | 'desc'} */ ('desc'))
@@ -60,7 +65,7 @@ export default function LeadsTable({
 
   return (
     <div className="-mx-5 overflow-x-auto overscroll-x-contain px-5">
-      <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+      <table className={`w-full border-collapse text-left text-sm ${showEntryUrl ? 'min-w-[44rem]' : 'min-w-[32rem]'}`}>
         <thead>
           <tr className="border-b border-brand-100">
             <SortHeader
@@ -71,7 +76,7 @@ export default function LeadsTable({
               onSort={toggleSort}
             />
             <SortHeader
-              label="Name"
+              label="Business name"
               columnKey="name"
               sortKey={sortKey}
               sortDir={sortDir}
@@ -84,6 +89,15 @@ export default function LeadsTable({
               sortDir={sortDir}
               onSort={toggleSort}
             />
+            {showEntryUrl ? (
+              <SortHeader
+                label="Entry URL"
+                columnKey="entryUrl"
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSort={toggleSort}
+              />
+            ) : null}
             <th
               scope="col"
               className="pb-2 pr-0 text-left text-xs font-semibold uppercase tracking-wide text-ink-400"
@@ -102,6 +116,11 @@ export default function LeadsTable({
                 {(lead.name && lead.name !== '—') ? lead.name : '—'}
               </td>
               <td className="py-2.5 pr-4 text-ink-700">{lead.source?.trim() || '—'}</td>
+              {showEntryUrl ? (
+                <td className="py-2.5 pr-4 text-ink-700">
+                  <EntryUrlLink url={lead.entryUrl} />
+                </td>
+              ) : null}
               <td className="py-2.5 text-ink-700">
                 {(lead.linkedDealIds ?? []).length > 0 ? 'Linked' : '—'}
               </td>

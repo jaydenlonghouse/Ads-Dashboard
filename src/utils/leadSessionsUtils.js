@@ -14,20 +14,32 @@ const SEO_SOURCE_NEEDLES = [
   'chat gpt',
 ]
 
-/**
- * @param {string | null | undefined} source
- */
-export function isSeoSource(source) {
-  const n = String(source ?? '').trim().toLowerCase()
-  if (!n) return false
-  return SEO_SOURCE_NEEDLES.some(needle => n === needle || n.includes(needle))
+function normalizeSource(source) {
+  return String(source ?? '').trim().toLowerCase()
 }
 
 /**
+ * Ads lead sources: Google Ads, Meta Ads, or ChatGPT Ads only.
  * @param {string | null | undefined} source
  */
 export function isAdsSource(source) {
-  return !isSeoSource(source)
+  const n = normalizeSource(source)
+  if (!n) return false
+  if (n.includes('chatgpt ads') || n.includes('chat gpt ads')) return true
+  if (n.includes('google ads')) return true
+  if (n.includes('meta ads') || n.includes('facebook ads') || n.includes('instagram ads')) return true
+  return false
+}
+
+/**
+ * SEO lead sources: Google My Business, Organic SEO, or ChatGPT (not ChatGPT Ads).
+ * @param {string | null | undefined} source
+ */
+export function isSeoSource(source) {
+  if (isAdsSource(source)) return false
+  const n = normalizeSource(source)
+  if (!n) return false
+  return SEO_SOURCE_NEEDLES.some(needle => n === needle || n.includes(needle))
 }
 
 /**
@@ -61,7 +73,11 @@ export function getDealsForSessions(sessions, allDeals) {
       const deal = byId[id]
       if (!deal) continue
       seen.add(id)
-      out.push({ ...deal, platforms: deal.platforms ?? [] })
+      out.push({
+        ...deal,
+        platforms: deal.platforms ?? [],
+        entryUrl: session.entryUrl ?? deal.entryUrl ?? null,
+      })
     }
   }
   return out

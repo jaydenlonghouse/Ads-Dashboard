@@ -90,6 +90,7 @@ export function dealSortValue(deal, sortKey) {
   if (sortKey === 'dealStage') return formatDealField(deal.dealStage)
   if (sortKey === 'dealStatus') return formatDealField(deal.dealStatus)
   if (sortKey === 'lostReason') return formatDealField(deal.lostReason)
+  if (sortKey === 'entryUrl') return deal.entryUrl ?? ''
   return ''
 }
 

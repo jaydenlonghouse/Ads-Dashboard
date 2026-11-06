@@ -14,8 +14,9 @@ import {
   getDealStatusPillClass,
 } from '../utils/dealsUtils.js'
 import { DealPlatformIcons } from './PlatformLogos.jsx'
+import EntryUrlLink from './EntryUrlLink.jsx'
 
-/** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus' | 'lostReason'} SortKey */
+/** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus' | 'lostReason' | 'entryUrl'} SortKey */
 
 /**
  * @param {{
@@ -23,6 +24,7 @@ import { DealPlatformIcons } from './PlatformLogos.jsx'
  *   isLoading?: boolean,
  *   embedded?: boolean,
  *   emptyMessage?: string,
+ *   showEntryUrl?: boolean,
  * }} props
  */
 export default function DealsTable({
@@ -30,6 +32,7 @@ export default function DealsTable({
   isLoading = false,
   embedded = false,
   emptyMessage = 'No linked deals in this period.',
+  showEntryUrl = false,
 }) {
   const [sortKey, setSortKey] = useState(/** @type {SortKey} */ ('businessName'))
   const [sortDir, setSortDir] = useState(/** @type {'asc' | 'desc'} */ ('asc'))
@@ -69,7 +72,7 @@ export default function DealsTable({
         </p>
       ) : (
         <div className="-mx-5 overflow-x-auto overscroll-x-contain px-5">
-          <table className="w-full min-w-[40rem] border-collapse text-left text-sm sm:min-w-[44rem]">
+          <table className={`w-full border-collapse text-left text-sm ${showEntryUrl ? 'min-w-[52rem]' : 'min-w-[40rem] sm:min-w-[44rem]'}`}>
             <thead>
               <tr className="border-b border-brand-100">
                 <SortHeader
@@ -100,6 +103,15 @@ export default function DealsTable({
                   sortDir={sortDir}
                   onSort={toggleSort}
                 />
+                {showEntryUrl ? (
+                  <SortHeader
+                    label="Entry URL"
+                    columnKey="entryUrl"
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={toggleSort}
+                  />
+                ) : null}
                 <SortHeader
                   label="Lost reasons"
                   columnKey="lostReason"
@@ -126,6 +138,11 @@ export default function DealsTable({
                   <td className="py-2.5 pr-4">
                     <DealStatusPill status={deal.dealStatus} />
                   </td>
+                  {showEntryUrl ? (
+                    <td className="py-2.5 pr-4 text-ink-700">
+                      <EntryUrlLink url={deal.entryUrl} />
+                    </td>
+                  ) : null}
                   <td className="py-2.5 text-ink-700">{formatDealField(deal.lostReason)}</td>
                 </tr>
               ))}
