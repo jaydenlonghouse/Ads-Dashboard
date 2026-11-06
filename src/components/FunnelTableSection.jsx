@@ -54,7 +54,7 @@ export default function FunnelTableSection({
       <p className="mb-4 text-xs leading-[1.45] text-ink-400">
         {isSeo
           ? 'Lead sessions from Google My Business, Organic SEO, or ChatGPT in the selected date range.'
-          : 'Lead sessions from Google Ads, Meta Ads, or ChatGPT Ads in the selected date range. Deals are sessions with a linked deal; wins are those deals marked won.'}
+          : 'Lead sessions from Google Ads, Meta Ads, or ChatGPT Ads in the selected date range (respects the platform filter). Deals are sessions with a linked deal; wins are those deals marked won.'}
       </p>
 
       <div

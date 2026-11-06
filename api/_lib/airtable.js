@@ -7,7 +7,7 @@ const BASE_ID = process.env.AIRTABLE_BASE_ID
 const TABLE = process.env.AIRTABLE_TABLE_NAME
 const DEALS_TABLE = process.env.AIRTABLE_DEALS_TABLE_NAME
 const LEAD_SESSIONS_TABLE =
-  process.env.AIRTABLE_LEAD_SESSIONS_TABLE_NAME || 'Lead Sessions'
+  process.env.AIRTABLE_LEAD_SESSIONS_TABLE_NAME || 'Lead Session Data'
 
 function assertAirtableEnv() {
   const missing = []
@@ -236,23 +236,51 @@ function pickSessionSourceFromFields(fields) {
   )
 }
 
+function coerceAirtableText(value) {
+  if (value == null || value === '') return null
+  if (Array.isArray(value)) {
+    const parts = value.map(coerceAirtableText).filter(Boolean)
+    return parts.length ? parts.join(', ') : null
+  }
+  if (typeof value === 'string') {
+    const s = value.trim()
+    return s || null
+  }
+  return pickAirtableSelectValue(value)
+}
+
 function pickSessionNameFromFields(fields) {
-  return (
-    pickFirstField(fields, ['Business Name', 'Business name'], value => {
-      if (value == null || value === '') return null
-      if (typeof value === 'string') {
-        const s = value.trim()
-        return s || null
-      }
-      return pickAirtableSelectValue(value)
-    }) ?? '—'
-  )
+  const preferred = [
+    'Business Name (from Linked Conversion)',
+    'Business Name (from Deals)',
+    'Business Name',
+    'Business name',
+    'Deal Name',
+  ]
+  const fromPreferred = pickFirstField(fields, preferred, coerceAirtableText)
+  if (fromPreferred) return fromPreferred
+  for (const name of Object.keys(fields)) {
+    const norm = name.trim().toLowerCase()
+    if (norm.includes('business name')) {
+      const parsed = coerceAirtableText(fields[name])
+      if (parsed) return parsed
+    }
+  }
+  return '—'
 }
 
 function pickSessionEntryUrlFromFields(fields) {
   return pickFirstField(
     fields,
-    ['Entry URL', 'Entry Url', 'EntryURL', 'Entry url', 'Landing Page', 'Landing Page URL'],
+    [
+      'Entry URL',
+      'Pulled Entry URL (from Linked Conversion)',
+      'Entry Url',
+      'EntryURL',
+      'Entry url',
+      'Landing Page',
+      'Landing Page URL',
+    ],
     value => {
       if (value == null || value === '') return null
       if (typeof value === 'string') {

@@ -18,17 +18,26 @@ function normalizeSource(source) {
   return String(source ?? '').trim().toLowerCase()
 }
 
+export function isGoogleAdsSource(source) {
+  return normalizeSource(source).includes('google ads')
+}
+
+export function isMetaAdsSource(source) {
+  const n = normalizeSource(source)
+  return n.includes('meta ads') || n.includes('facebook ads') || n.includes('instagram ads')
+}
+
+export function isChatGptAdsSource(source) {
+  const n = normalizeSource(source)
+  return n.includes('chatgpt ads') || n.includes('chat gpt ads')
+}
+
 /**
  * Ads lead sources: Google Ads, Meta Ads, or ChatGPT Ads only.
  * @param {string | null | undefined} source
  */
 export function isAdsSource(source) {
-  const n = normalizeSource(source)
-  if (!n) return false
-  if (n.includes('chatgpt ads') || n.includes('chat gpt ads')) return true
-  if (n.includes('google ads')) return true
-  if (n.includes('meta ads') || n.includes('facebook ads') || n.includes('instagram ads')) return true
-  return false
+  return isGoogleAdsSource(source) || isMetaAdsSource(source) || isChatGptAdsSource(source)
 }
 
 /**
@@ -45,10 +54,17 @@ export function isSeoSource(source) {
 /**
  * @param {'ads' | 'seo'} department
  * @param {Array<{ source?: string }>} sessions
+ * @param {string[]} [platformFilter] Ads view: 'All' | 'Google' | 'Meta'
  */
-export function filterSessionsByDepartment(sessions, department) {
+export function filterSessionsByDepartment(sessions, department, platformFilter = ['All']) {
   if (department === 'seo') return sessions.filter(s => isSeoSource(s.source))
-  return sessions.filter(s => isAdsSource(s.source))
+  const ads = sessions.filter(s => isAdsSource(s.source))
+  const wantsGoogle = platformFilter.includes('Google')
+  const wantsMeta = platformFilter.includes('Meta')
+  if (platformFilter.includes('All') || (!wantsGoogle && !wantsMeta)) return ads
+  if (wantsGoogle && !wantsMeta) return ads.filter(s => isGoogleAdsSource(s.source))
+  if (wantsMeta && !wantsGoogle) return ads.filter(s => isMetaAdsSource(s.source))
+  return ads
 }
 
 /**

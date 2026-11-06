@@ -82,7 +82,7 @@ Sign-in uses `hd=longhouse.co` (Workspace hint) plus app and API checks that the
 | `AIRTABLE_BASE_ID` | Base ID from the Airtable URL |
 | `AIRTABLE_TABLE_NAME` | Metrics table name |
 | `AIRTABLE_DEALS_TABLE_NAME` | Deals table name |
-| `AIRTABLE_LEAD_SESSIONS_TABLE_NAME` | Lead Sessions table name (default `Lead Sessions`) |
+| `AIRTABLE_LEAD_SESSIONS_TABLE_NAME` | Lead sessions table name (default `Lead Session Data`) |
 | `SUPABASE_URL` | Same as `VITE_SUPABASE_URL` |
 | `SUPABASE_ANON_KEY` | Same as `VITE_SUPABASE_ANON_KEY` |
 | `ALLOWED_EMAIL_DOMAIN` | Optional; default `longhouse.co` |

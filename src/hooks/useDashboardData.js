@@ -150,9 +150,9 @@ export function useDashboardData({ dateRange, platformFilter }) {
   const currentSessions = filterByDateRange(allLeadSessions, start, end)
   const previousSessions = filterByDateRange(allLeadSessions, prevStart, prevEnd)
 
-  const adsCurrentSessions = filterSessionsByDepartment(currentSessions, 'ads')
+  const adsCurrentSessions = filterSessionsByDepartment(currentSessions, 'ads', platformFilter)
   const seoCurrentSessions = filterSessionsByDepartment(currentSessions, 'seo')
-  const adsPreviousSessions = filterSessionsByDepartment(previousSessions, 'ads')
+  const adsPreviousSessions = filterSessionsByDepartment(previousSessions, 'ads', platformFilter)
   const seoPreviousSessions = filterSessionsByDepartment(previousSessions, 'seo')
 
   const adsFunnel = funnelCounts(adsCurrentSessions, allDeals)
