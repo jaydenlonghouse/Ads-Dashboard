@@ -3,6 +3,7 @@
  */
 
 import { safeDivide } from './kpiUtils.js'
+import { preferLeadQuality } from './leadQualityUtils.js'
 
 const SEO_SOURCE_NEEDLES = [
   'google my business',
@@ -84,27 +85,39 @@ export function isWonDealStatus(status) {
 
 /**
  * Deduped deals linked from the given lead sessions.
- * @param {Array<{ linkedDealIds?: string[] }>} sessions
+ * Lead quality comes from the Pipedrive lead (via the session), not the
+ * converted Pipedrive deal — conversion deletes the lead and its labels.
+ * @param {Array<{ linkedDealIds?: string[], leadQuality?: string|null, entryUrl?: string|null }>} sessions
  * @param {Array<{ id: string }>} allDeals
  */
 export function getDealsForSessions(sessions, allDeals) {
   const byId = Object.fromEntries(allDeals.map(d => [d.id, d]))
-  const seen = new Set()
-  const out = []
+  /** @type {Map<string, object>} */
+  const out = new Map()
   for (const session of sessions) {
     for (const id of session.linkedDealIds ?? []) {
-      if (!id || seen.has(id)) continue
+      if (!id) continue
       const deal = byId[id]
       if (!deal) continue
-      seen.add(id)
-      out.push({
-        ...deal,
-        platforms: deal.platforms ?? [],
-        entryUrl: session.entryUrl ?? deal.entryUrl ?? null,
-      })
+      const existing = out.get(id)
+      const leadQuality = preferLeadQuality(
+        existing?.leadQuality ?? deal.leadQuality,
+        session.leadQuality,
+      )
+      if (!existing) {
+        out.set(id, {
+          ...deal,
+          platforms: deal.platforms ?? [],
+          entryUrl: session.entryUrl ?? deal.entryUrl ?? null,
+          leadQuality: leadQuality ?? deal.leadQuality ?? null,
+        })
+      } else {
+        existing.leadQuality = leadQuality ?? existing.leadQuality
+        if (!existing.entryUrl && session.entryUrl) existing.entryUrl = session.entryUrl
+      }
     }
   }
-  return out
+  return [...out.values()]
 }
 
 /**

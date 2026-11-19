@@ -234,6 +234,7 @@ function normaliseDeal(record) {
     dealStatus: pickAirtableSelectValue(f['Deal Status']) ?? '—',
     lostReason: pickLostReasonFromFields(f),
     orgId: coerceAirtableId(f['Org ID']),
+    dealId: coerceAirtableId(f['Deal ID']),
     leadQuality: pickLeadQualityFromFields(f),
   }
 }
@@ -368,6 +369,7 @@ function normaliseLeadSession(record) {
     linkedDealIds: pickSessionLinkedDealIds(f),
     linkedConversionIds: pickSessionLinkedConversionIds(f),
     orgId: pickSessionOrgIdFromFields(f),
+    dealId: coerceAirtableId(f['Deal ID']),
     leadQuality: pickLeadQualityFromFields(f),
   }
 }
@@ -477,8 +479,12 @@ export async function fetchAllLeadSessions() {
       .find(Boolean) ?? null
     return { ...session, conversionDate }
   })
-  const { applyAndPersistLeadQuality } = await import('./leadQualitySync.js')
-  return applyAndPersistLeadQuality(withDates, LEAD_SESSIONS_TABLE)
+  const { applyAndPersistLeadQuality, persistQualityOntoLinkedDeals } = await import(
+    './leadQualitySync.js'
+  )
+  const withQuality = await applyAndPersistLeadQuality(withDates, LEAD_SESSIONS_TABLE)
+  await persistQualityOntoLinkedDeals(withQuality)
+  return withQuality
 }
 
 /** Batch-update one field on existing records (Airtable max 10 per request). */

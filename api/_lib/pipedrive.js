@@ -53,49 +53,75 @@ async function fetchLabelNameById() {
   return Object.fromEntries((data?.data ?? []).map(label => [label.id, label.name]))
 }
 
+function orgIdFromDeal(deal) {
+  const org = deal?.org_id
+  if (org == null || org === '') return ''
+  if (typeof org === 'object') {
+    const id = org.value ?? org.id
+    return id == null ? '' : String(id)
+  }
+  return String(org)
+}
+
+async function fetchAllDeals(path) {
+  return fetchAllLeads(path)
+}
+
 /**
- * Newest Pipedrive lead (active or archived) per organization → classified quality.
- * @returns {Promise<Map<string, string>|null>}
+ * Historical quality maps from Pipedrive leads (active + archived) and deals.
+ * Deal labels are usually empty after conversion, so deals inherit the org's
+ * newest labeled lead. Converted source leads that Pipedrive deleted are gone.
+ * @returns {Promise<{ byOrg: Map<string, string>, byDeal: Map<string, string> }|null>}
  */
-export async function fetchOrgLeadQualityMap() {
+export async function fetchLeadQualityMaps() {
   if (!isPipedriveConfigured()) return null
 
-  const [labelById, active, archived] = await Promise.all([
+  const [labelById, activeLeads, archivedLeads, openDeals, archivedDeals] = await Promise.all([
     fetchLabelNameById(),
     fetchAllLeads('/v1/leads'),
     fetchAllLeads('/v1/leads/archived'),
+    fetchAllDeals('/v1/deals'),
+    fetchAllDeals('/v1/deals/archived'),
   ])
 
-  const map = new Map()
-  for (const lead of [...active, ...archived]) {
+  const byOrgDated = new Map()
+  for (const lead of [...activeLeads, ...archivedLeads]) {
     const orgId = lead.organization_id == null ? '' : String(lead.organization_id)
     if (!orgId) continue
     const names = (lead.label_ids ?? []).map(id => labelById[id]).filter(Boolean)
     const quality = classifyLeadLabels(names)
     if (!quality) continue
-    const prev = map.get(orgId)
+    const prev = byOrgDated.get(orgId)
     if (!prev || (lead.add_time || '') > prev.addTime) {
-      map.set(orgId, { quality, addTime: lead.add_time || '' })
+      byOrgDated.set(orgId, { quality, addTime: lead.add_time || '' })
     }
   }
 
-  return new Map([...map.entries()].map(([orgId, row]) => [orgId, row.quality]))
+  const byOrg = new Map([...byOrgDated.entries()].map(([orgId, row]) => [orgId, row.quality]))
+  const byDeal = new Map()
+  for (const deal of [...openDeals, ...archivedDeals]) {
+    if (deal?.id == null) continue
+    const fromOrg = byOrg.get(orgIdFromDeal(deal))
+    if (fromOrg) byDeal.set(String(deal.id), fromOrg)
+  }
+
+  return { byOrg, byDeal }
 }
 
-let cachedMap = null
+let cachedMaps = null
 let cachedAt = 0
 let inflight = null
 const CACHE_MS = 10 * 60 * 1000
 
-export async function getCachedOrgLeadQualityMap() {
+export async function getCachedLeadQualityMaps() {
   if (!isPipedriveConfigured()) return null
-  if (cachedMap && Date.now() - cachedAt < CACHE_MS) return cachedMap
+  if (cachedMaps && Date.now() - cachedAt < CACHE_MS) return cachedMaps
   if (inflight) return inflight
-  inflight = fetchOrgLeadQualityMap()
-    .then(map => {
-      cachedMap = map
+  inflight = fetchLeadQualityMaps()
+    .then(maps => {
+      cachedMaps = maps
       cachedAt = Date.now()
-      return map
+      return maps
     })
     .finally(() => {
       inflight = null

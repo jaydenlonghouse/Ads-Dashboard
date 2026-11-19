@@ -28,6 +28,20 @@ export function classifyLeadLabels(names) {
   return list[0]
 }
 
+function qualityRank(value) {
+  const tier = qualityTier(value)
+  if (tier === 'High') return 4
+  if (tier === 'Medium') return 3
+  if (tier === 'Low') return 2
+  if (value) return 1
+  return 0
+}
+
+/** Keep High > Medium > Low > any other label > empty. */
+export function preferLeadQuality(current, incoming) {
+  return qualityRank(incoming) > qualityRank(current) ? incoming : current
+}
+
 /**
  * @param {Array<{ leadQuality?: string|null }>} items
  * @returns {{ high: number|null, medium: number|null, low: number|null }}
