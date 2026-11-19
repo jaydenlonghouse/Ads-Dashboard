@@ -48,7 +48,12 @@ function createVercelRequest(nodeReq) {
 
 function applyServerEnv(env) {
   for (const [key, value] of Object.entries(env)) {
-    if (key.startsWith('AIRTABLE_') || key.startsWith('SUPABASE_') || key === 'ALLOWED_EMAIL_DOMAIN') {
+    if (
+      key.startsWith('AIRTABLE_') ||
+      key.startsWith('SUPABASE_') ||
+      key.startsWith('PIPEDRIVE_') ||
+      key === 'ALLOWED_EMAIL_DOMAIN'
+    ) {
       process.env[key] = value
     }
   }

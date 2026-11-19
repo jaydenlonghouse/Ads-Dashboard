@@ -9,6 +9,8 @@ const DEALS_TABLE = process.env.AIRTABLE_DEALS_TABLE_NAME
 const LEAD_SESSIONS_TABLE =
   process.env.AIRTABLE_LEAD_SESSIONS_TABLE_NAME || 'Lead Session Data'
 const CONVERSIONS_TABLE = process.env.AIRTABLE_CONVERSIONS_TABLE_NAME || 'Conversions'
+const LEAD_QUALITY_FIELD =
+  process.env.AIRTABLE_LEAD_QUALITY_FIELD_NAME || 'Lead Quality'
 
 function assertAirtableEnv() {
   const missing = []
@@ -78,6 +80,23 @@ function pickLinkedRecordIds(value) {
       return null
     })
     .filter(Boolean)
+}
+
+function coerceAirtableId(value) {
+  if (value == null || value === '') return null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const inner = coerceAirtableId(item)
+      if (inner) return inner
+    }
+    return null
+  }
+  if (typeof value === 'object') {
+    if (value.id != null && String(value.id).trim() !== '') return String(value.id).trim()
+    if (value.name != null && String(value.name).trim() !== '') return String(value.name).trim()
+  }
+  const s = String(value).trim()
+  return s || null
 }
 
 function pickLinkedDealIds(fields) {
@@ -189,6 +208,22 @@ function pickDealDateFromFields(fields) {
   return null
 }
 
+function pickLeadQualityFromFields(fields) {
+  return pickFirstField(
+    fields,
+    [LEAD_QUALITY_FIELD, 'Lead Quality', 'Lead quality', 'Quality'],
+    value => pickAirtableSelectValue(value) ?? coerceAirtableText(value),
+  )
+}
+
+function pickSessionOrgIdFromFields(fields) {
+  return (
+    coerceAirtableId(fields['Org ID (from Linked Conversion)']) ||
+    coerceAirtableId(fields['Org ID (from Deals)']) ||
+    coerceAirtableId(fields['Org ID'])
+  )
+}
+
 function normaliseDeal(record) {
   const f = record.fields ?? {}
   return {
@@ -198,6 +233,8 @@ function normaliseDeal(record) {
     dealStage: pickAirtableSelectValue(f['Deal Stage']) ?? '—',
     dealStatus: pickAirtableSelectValue(f['Deal Status']) ?? '—',
     lostReason: pickLostReasonFromFields(f),
+    orgId: coerceAirtableId(f['Org ID']),
+    leadQuality: pickLeadQualityFromFields(f),
   }
 }
 
@@ -330,6 +367,8 @@ function normaliseLeadSession(record) {
     entryUrl: pickSessionEntryUrlFromFields(f),
     linkedDealIds: pickSessionLinkedDealIds(f),
     linkedConversionIds: pickSessionLinkedConversionIds(f),
+    orgId: pickSessionOrgIdFromFields(f),
+    leadQuality: pickLeadQualityFromFields(f),
   }
 }
 
@@ -410,10 +449,12 @@ export async function fetchAllRecords() {
 }
 
 export async function fetchAllDeals() {
-  return fetchAllFromTable(DEALS_TABLE, {
+  const deals = await fetchAllFromTable(DEALS_TABLE, {
     sortField: 'Business Name',
     mapRecord: normaliseDeal,
   })
+  const { applyAndPersistLeadQuality } = await import('./leadQualitySync.js')
+  return applyAndPersistLeadQuality(deals, DEALS_TABLE)
 }
 
 export async function fetchAllLeadSessions() {
@@ -430,10 +471,38 @@ export async function fetchAllLeadSessions() {
     conversions.filter(c => c.id && c.date).map(c => [c.id, c.date]),
   )
 
-  return sessions.map(session => {
+  const withDates = sessions.map(session => {
     const conversionDate = (session.linkedConversionIds ?? [])
       .map(id => dateByConversionId[id])
       .find(Boolean) ?? null
     return { ...session, conversionDate }
   })
+  const { applyAndPersistLeadQuality } = await import('./leadQualitySync.js')
+  return applyAndPersistLeadQuality(withDates, LEAD_SESSIONS_TABLE)
+}
+
+/** Batch-update one field on existing records (Airtable max 10 per request). */
+export async function updateRecordFieldValues(tableName, records, fieldName) {
+  if (!tableName || !fieldName || !records.length) return
+  assertAirtableEnv()
+  const headers = {
+    Authorization: `Bearer ${PAT}`,
+    'Content-Type': 'application/json',
+  }
+
+  for (let i = 0; i < records.length; i += 10) {
+    const chunk = records.slice(i, i + 10).filter(r => r.id && r.value != null && r.value !== '')
+    if (!chunk.length) continue
+    await fetchWithBackoff(tableUrl(tableName), {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        typecast: true,
+        records: chunk.map(r => ({
+          id: r.id,
+          fields: { [fieldName]: r.value },
+        })),
+      }),
+    })
+  }
 }

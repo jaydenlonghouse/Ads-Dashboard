@@ -15,12 +15,13 @@ import {
 } from '../utils/dealsUtils.js'
 import { DealPlatformIcons } from './PlatformLogos.jsx'
 import EntryUrlLink from './EntryUrlLink.jsx'
+import QualityBadge from './QualityBadge.jsx'
 
-/** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus' | 'lostReason' | 'entryUrl'} SortKey */
+/** @typedef {'businessName' | 'date' | 'dealStage' | 'dealStatus' | 'lostReason' | 'entryUrl' | 'leadQuality'} SortKey */
 
 /**
  * @param {{
- *   deals: Array<{ id: string, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, date?: string|null, platforms?: ('google'|'meta')[] }>,
+ *   deals: Array<{ id: string, businessName: string, dealStage: string, dealStatus: string, lostReason?: string|null, leadQuality?: string|null, date?: string|null, platforms?: ('google'|'meta')[] }>,
  *   isLoading?: boolean,
  *   embedded?: boolean,
  *   emptyMessage?: string,
@@ -72,7 +73,7 @@ export default function DealsTable({
         </p>
       ) : (
         <div className="-mx-5 overflow-x-auto overscroll-x-contain px-5">
-          <table className={`w-full border-collapse text-left text-sm ${showEntryUrl ? 'min-w-[52rem]' : 'min-w-[40rem] sm:min-w-[44rem]'}`}>
+          <table className={`w-full border-collapse text-left text-sm ${showEntryUrl ? 'min-w-[60rem]' : 'min-w-[48rem] sm:min-w-[52rem]'}`}>
             <thead>
               <tr className="border-b border-brand-100">
                 <SortHeader
@@ -99,6 +100,13 @@ export default function DealsTable({
                 <SortHeader
                   label="Deal status"
                   columnKey="dealStatus"
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={toggleSort}
+                />
+                <SortHeader
+                  label="Lead quality"
+                  columnKey="leadQuality"
                   sortKey={sortKey}
                   sortDir={sortDir}
                   onSort={toggleSort}
@@ -137,6 +145,9 @@ export default function DealsTable({
                   <td className="py-2.5 pr-4 text-ink-700">{formatDealField(deal.dealStage)}</td>
                   <td className="py-2.5 pr-4">
                     <DealStatusPill status={deal.dealStatus} />
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    <QualityBadge value={deal.leadQuality} />
                   </td>
                   {showEntryUrl ? (
                     <td className="py-2.5 pr-4 text-ink-700">

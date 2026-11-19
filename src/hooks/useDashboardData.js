@@ -34,6 +34,7 @@ import {
   getWonDeals,
   withAdsLeadDate,
 } from '../utils/leadSessionsUtils.js'
+import { qualityShare } from '../utils/leadQualityUtils.js'
 import {
   filterByDateRange,
   filterByPlatform,
@@ -196,6 +197,40 @@ export function useDashboardData({ dateRange, platformFilter }) {
   const adsPeriodWins = useMemo(() => getWonDeals(adsPeriodDeals), [adsPeriodDeals])
   const seoPeriodWins = useMemo(() => getWonDeals(seoPeriodDeals), [seoPeriodDeals])
 
+  const adsLeadQuality = qualityShare(adsCurrentSessions)
+  const seoLeadQuality = qualityShare(seoCurrentSessions)
+  const adsDealQuality = qualityShare(adsPeriodDeals)
+  const seoDealQuality = qualityShare(seoPeriodDeals)
+  const adsLeadQualityPrev = qualityShare(adsPreviousSessions)
+  const seoLeadQualityPrev = qualityShare(seoPreviousSessions)
+  const adsDealQualityPrev = qualityShare(getDealsForSessions(adsPreviousSessions, allDeals))
+  const seoDealQualityPrev = qualityShare(getDealsForSessions(seoPreviousSessions, allDeals))
+
+  const adsLeadQualityDeltas = Object.fromEntries(
+    Object.keys(adsLeadQuality).map(key => [
+      key,
+      calcDelta(adsLeadQuality[key], adsLeadQualityPrev[key]),
+    ]),
+  )
+  const seoLeadQualityDeltas = Object.fromEntries(
+    Object.keys(seoLeadQuality).map(key => [
+      key,
+      calcDelta(seoLeadQuality[key], seoLeadQualityPrev[key]),
+    ]),
+  )
+  const adsDealQualityDeltas = Object.fromEntries(
+    Object.keys(adsDealQuality).map(key => [
+      key,
+      calcDelta(adsDealQuality[key], adsDealQualityPrev[key]),
+    ]),
+  )
+  const seoDealQualityDeltas = Object.fromEntries(
+    Object.keys(seoDealQuality).map(key => [
+      key,
+      calcDelta(seoDealQuality[key], seoDealQualityPrev[key]),
+    ]),
+  )
+
   const monthlyTrendData = getTrendBucketsWithinSelectedRange({ start, end }).map(
     ({ start: ws, end: we }) => {
       const rows = filterByPlatform(
@@ -237,6 +272,14 @@ export function useDashboardData({ dateRange, platformFilter }) {
     seoFunnel,
     adsFunnelDeltas,
     seoFunnelDeltas,
+    adsLeadQuality,
+    seoLeadQuality,
+    adsDealQuality,
+    seoDealQuality,
+    adsLeadQualityDeltas,
+    seoLeadQualityDeltas,
+    adsDealQualityDeltas,
+    seoDealQualityDeltas,
     availablePlatforms,
     prevStart,
     prevEnd,

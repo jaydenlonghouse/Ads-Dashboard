@@ -81,6 +81,58 @@ export const KPI_DEFS = [
 /** Default metrics shown on the trend chart when the dashboard loads. */
 export const DEFAULT_CHART_METRIC_KEYS = ['cpl', 'cpd', 'cpw']
 
+const qualityPct = v => formatPercent(v, 1)
+
+/** Pipedrive High / Medium / Low share of leads in the selected period. */
+export const LEAD_QUALITY_DEFS = [
+  {
+    key: 'high',
+    label: 'Lead · High',
+    tooltip: 'Share of leads in this period with a Pipedrive High Quality label.',
+    format: qualityPct,
+    lowerIsBetter: false,
+  },
+  {
+    key: 'medium',
+    label: 'Lead · Medium',
+    tooltip: 'Share of leads in this period with a Pipedrive Medium Quality label.',
+    format: qualityPct,
+    lowerIsBetter: false,
+  },
+  {
+    key: 'low',
+    label: 'Lead · Low',
+    tooltip: 'Share of leads in this period with a Pipedrive Low Quality label.',
+    format: qualityPct,
+    lowerIsBetter: true,
+  },
+]
+
+/** Same mix for deals linked from those leads. */
+export const DEAL_QUALITY_DEFS = [
+  {
+    key: 'high',
+    label: 'Deal · High',
+    tooltip: 'Share of deals in this period whose org has a Pipedrive High Quality lead label.',
+    format: qualityPct,
+    lowerIsBetter: false,
+  },
+  {
+    key: 'medium',
+    label: 'Deal · Medium',
+    tooltip: 'Share of deals in this period whose org has a Pipedrive Medium Quality lead label.',
+    format: qualityPct,
+    lowerIsBetter: false,
+  },
+  {
+    key: 'low',
+    label: 'Deal · Low',
+    tooltip: 'Share of deals in this period whose org has a Pipedrive Low Quality lead label.',
+    format: qualityPct,
+    lowerIsBetter: true,
+  },
+]
+
 /** Funnel rates shown for both Ads and SEO departments. */
 export const FUNNEL_RATE_DEFS = [
   {

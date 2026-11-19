@@ -31,7 +31,14 @@ import {
 } from './utils/dateDefaultPreference.js'
 import { useAuth } from './contexts/AuthContext.jsx'
 import { buildAdvertisingQuestionGmailUrl } from './utils/advertisingQuestionEmail.js'
-import { KPI_DEFS, DEFAULT_CHART_METRIC_KEYS, SEO_FUNNEL_DEFS, FUNNEL_RATE_DEFS } from './config/kpiConfig.js'
+import {
+  KPI_DEFS,
+  DEFAULT_CHART_METRIC_KEYS,
+  SEO_FUNNEL_DEFS,
+  FUNNEL_RATE_DEFS,
+  LEAD_QUALITY_DEFS,
+  DEAL_QUALITY_DEFS,
+} from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
 
 import DateRangePicker from './components/DateRangePicker.jsx'
@@ -139,6 +146,14 @@ export default function App() {
     adsFunnelDeltas,
     seoFunnel,
     seoFunnelDeltas,
+    adsLeadQuality,
+    seoLeadQuality,
+    adsDealQuality,
+    seoDealQuality,
+    adsLeadQualityDeltas,
+    seoLeadQualityDeltas,
+    adsDealQualityDeltas,
+    seoDealQualityDeltas,
     prevStart,
     prevEnd,
   } = useDashboardData({
@@ -348,6 +363,39 @@ export default function App() {
               </div>
             )}
 
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
+                {[...LEAD_QUALITY_DEFS, ...DEAL_QUALITY_DEFS].map(d => (
+                  <div key={`ads-q-${d.label}`} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
+                {LEAD_QUALITY_DEFS.map(d => (
+                  <KpiCard
+                    key={`ads-lead-${d.key}`}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(adsLeadQuality[d.key])}
+                    delta={adsLeadQualityDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+                {DEAL_QUALITY_DEFS.map(d => (
+                  <KpiCard
+                    key={`ads-deal-${d.key}`}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(adsDealQuality[d.key])}
+                    delta={adsDealQualityDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+              </div>
+            )}
+
             <KpiMetricMobileSheet
               open={Boolean(metricSheet)}
               metricLabel={metricSheet?.label ?? ''}
@@ -399,6 +447,39 @@ export default function App() {
                     tooltip={d.tooltip}
                     value={d.format(seoFunnel[d.key])}
                     delta={seoFunnelDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
+                {[...LEAD_QUALITY_DEFS, ...DEAL_QUALITY_DEFS].map(d => (
+                  <div key={`seo-q-${d.label}`} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
+                {LEAD_QUALITY_DEFS.map(d => (
+                  <KpiCard
+                    key={`seo-lead-${d.key}`}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(seoLeadQuality[d.key])}
+                    delta={seoLeadQualityDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+                {DEAL_QUALITY_DEFS.map(d => (
+                  <KpiCard
+                    key={`seo-deal-${d.key}`}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(seoDealQuality[d.key])}
+                    delta={seoDealQualityDeltas[d.key]}
                     lowerIsBetter={d.lowerIsBetter}
                   />
                 ))}
