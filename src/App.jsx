@@ -3,7 +3,7 @@
  *
  * Root component.  Owns user-controlled state:
  *   - dateRange    { start: Date, end: Date }
- *   - department   'ads' | 'seo'
+ *   - department   'ads' | 'seo' | 'all'
  *   - platformTab  'All' | 'Google' | 'Meta' (Ads view)
  *   - chartMetricKeys  KPI keys shown on the trend chart (may be empty)
  */
@@ -35,9 +35,8 @@ import {
   KPI_DEFS,
   DEFAULT_CHART_METRIC_KEYS,
   SEO_FUNNEL_DEFS,
+  ALL_FUNNEL_DEFS,
   FUNNEL_RATE_DEFS,
-  LEAD_QUALITY_DEFS,
-  DEAL_QUALITY_DEFS,
 } from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
 
@@ -49,6 +48,8 @@ import KpiCard from './components/KpiCard.jsx'
 import KpiMetricMobileSheet from './components/KpiMetricMobileSheet.jsx'
 import TrendChart from './components/TrendChart.jsx'
 import FunnelTableSection from './components/FunnelTableSection.jsx'
+import { QualityPiesRow } from './components/QualityPieChart.jsx'
+import FunnelDropoffChart from './components/FunnelDropoffChart.jsx'
 import longhouseAdvertisingLogo from './assets/longhouse-advertising-logo.svg'
 
 function getInitialDateState() {
@@ -73,7 +74,7 @@ export default function App() {
   const [calendarYear, setCalendarYear] = useState(() => getInitialDateState().calendarYear)
   const [savedDateDefault, setSavedDateDefault] = useState(() => getInitialDateState().saved)
   const [platformTab, setPlatformTab] = useState('All')
-  const [department, setDepartment] = useState(/** @type {'ads' | 'seo'} */ ('ads'))
+  const [department, setDepartment] = useState(/** @type {'ads' | 'seo' | 'all'} */ ('ads'))
   const [chartMetricKeys, setChartMetricKeys] = useState(() => [...DEFAULT_CHART_METRIC_KEYS])
   const [metricSheet, setMetricSheet] = useState(null)
 
@@ -138,22 +139,25 @@ export default function App() {
     monthlyTrendData,
     adsCurrentSessions,
     seoCurrentSessions,
+    allCurrentSessions,
     adsPeriodDeals,
     seoPeriodDeals,
+    allPeriodDeals,
     adsPeriodWins,
     seoPeriodWins,
+    allPeriodWins,
     adsFunnel,
     adsFunnelDeltas,
     seoFunnel,
     seoFunnelDeltas,
+    allFunnel,
+    allFunnelDeltas,
     adsLeadQuality,
     seoLeadQuality,
+    allLeadQuality,
     adsDealQuality,
     seoDealQuality,
-    adsLeadQualityDeltas,
-    seoLeadQualityDeltas,
-    adsDealQualityDeltas,
-    seoDealQualityDeltas,
+    allDealQuality,
     prevStart,
     prevEnd,
   } = useDashboardData({
@@ -193,6 +197,7 @@ export default function App() {
 
   const askQuestionDisabled = department !== 'ads' || !askQuestionGmailUrl
   const isAds = department === 'ads'
+  const isAll = department === 'all'
 
   const mobileDateSummary = format(dateRange.start, 'MMM d') + ' – ' + format(dateRange.end, 'MMM d')
 
@@ -304,7 +309,47 @@ export default function App() {
           </p>
         )}
 
-        {isAds ? (
+        {isAll ? (
+          <>
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
+                {ALL_FUNNEL_DEFS.map(d => (
+                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
+                {ALL_FUNNEL_DEFS.map(d => (
+                  <KpiCard
+                    key={d.key}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(allFunnel[d.key])}
+                    delta={allFunnelDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+              </div>
+            )}
+
+            {isLoading ? (
+              <div className="h-80 animate-pulse rounded-xl border border-brand-100 bg-white" />
+            ) : (
+              <FunnelDropoffChart
+                leads={allFunnel.leads}
+                deals={allFunnel.deals}
+                wins={allFunnel.wins}
+              />
+            )}
+
+            <QualityPiesRow
+              leadSlices={allLeadQuality}
+              dealSlices={allDealQuality}
+              isLoading={isLoading}
+            />
+          </>
+        ) : isAds ? (
           <>
             {isLoading ? (
               <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4">
@@ -363,38 +408,11 @@ export default function App() {
               </div>
             )}
 
-            {isLoading ? (
-              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
-                {[...LEAD_QUALITY_DEFS, ...DEAL_QUALITY_DEFS].map(d => (
-                  <div key={`ads-q-${d.label}`} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
-                {LEAD_QUALITY_DEFS.map(d => (
-                  <KpiCard
-                    key={`ads-lead-${d.key}`}
-                    isMobile={isMobile}
-                    label={d.label}
-                    tooltip={d.tooltip}
-                    value={d.format(adsLeadQuality[d.key])}
-                    delta={adsLeadQualityDeltas[d.key]}
-                    lowerIsBetter={d.lowerIsBetter}
-                  />
-                ))}
-                {DEAL_QUALITY_DEFS.map(d => (
-                  <KpiCard
-                    key={`ads-deal-${d.key}`}
-                    isMobile={isMobile}
-                    label={d.label}
-                    tooltip={d.tooltip}
-                    value={d.format(adsDealQuality[d.key])}
-                    delta={adsDealQualityDeltas[d.key]}
-                    lowerIsBetter={d.lowerIsBetter}
-                  />
-                ))}
-              </div>
-            )}
+            <QualityPiesRow
+              leadSlices={adsLeadQuality}
+              dealSlices={adsDealQuality}
+              isLoading={isLoading}
+            />
 
             <KpiMetricMobileSheet
               open={Boolean(metricSheet)}
@@ -453,46 +471,19 @@ export default function App() {
               </div>
             )}
 
-            {isLoading ? (
-              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
-                {[...LEAD_QUALITY_DEFS, ...DEAL_QUALITY_DEFS].map(d => (
-                  <div key={`seo-q-${d.label}`} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
-                {LEAD_QUALITY_DEFS.map(d => (
-                  <KpiCard
-                    key={`seo-lead-${d.key}`}
-                    isMobile={isMobile}
-                    label={d.label}
-                    tooltip={d.tooltip}
-                    value={d.format(seoLeadQuality[d.key])}
-                    delta={seoLeadQualityDeltas[d.key]}
-                    lowerIsBetter={d.lowerIsBetter}
-                  />
-                ))}
-                {DEAL_QUALITY_DEFS.map(d => (
-                  <KpiCard
-                    key={`seo-deal-${d.key}`}
-                    isMobile={isMobile}
-                    label={d.label}
-                    tooltip={d.tooltip}
-                    value={d.format(seoDealQuality[d.key])}
-                    delta={seoDealQualityDeltas[d.key]}
-                    lowerIsBetter={d.lowerIsBetter}
-                  />
-                ))}
-              </div>
-            )}
+            <QualityPiesRow
+              leadSlices={seoLeadQuality}
+              dealSlices={seoDealQuality}
+              isLoading={isLoading}
+            />
           </>
         )}
 
         <FunnelTableSection
           department={department}
-          leads={isAds ? adsCurrentSessions : seoCurrentSessions}
-          deals={isAds ? adsPeriodDeals : seoPeriodDeals}
-          wins={isAds ? adsPeriodWins : seoPeriodWins}
+          leads={isAll ? allCurrentSessions : isAds ? adsCurrentSessions : seoCurrentSessions}
+          deals={isAll ? allPeriodDeals : isAds ? adsPeriodDeals : seoPeriodDeals}
+          wins={isAll ? allPeriodWins : isAds ? adsPeriodWins : seoPeriodWins}
           isLoading={isLoading}
         />
       </main>

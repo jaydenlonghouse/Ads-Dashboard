@@ -15,7 +15,7 @@ const TABS = [
 
 /**
  * @param {{
- *   department: 'ads' | 'seo',
+ *   department: 'ads' | 'seo' | 'all',
  *   leads: Array<object>,
  *   deals: Array<object>,
  *   wins: Array<object>,
@@ -32,6 +32,8 @@ export default function FunnelTableSection({
   const [tab, setTab] = useState('leads')
   const counts = { leads: leads.length, deals: deals.length, wins: wins.length }
   const isSeo = department === 'seo'
+  const isAll = department === 'all'
+  const showEntryUrl = isSeo || isAll
 
   if (isLoading) {
     return (
@@ -49,12 +51,14 @@ export default function FunnelTableSection({
   return (
     <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-brand-100 bg-white p-5">
       <h2 className="text-base font-semibold leading-[1.2] text-brand-800 mb-1">
-        {isSeo ? 'SEO pipeline' : 'Ads pipeline'}
+        {isAll ? 'All pipeline' : isSeo ? 'SEO pipeline' : 'Ads pipeline'}
       </h2>
       <p className="mb-4 text-xs leading-[1.45] text-ink-400">
-        {isSeo
-          ? 'Lead sessions from Google My Business, Organic SEO, or ChatGPT in the selected date range.'
-          : 'Lead sessions from Google Ads, Meta Ads, or ChatGPT Ads in the selected date range, dated by the linked conversion (respects the platform filter). Deals are sessions with a linked deal; wins are those deals marked won.'}
+        {isAll
+          ? 'Ads and SEO lead sessions in the selected date range. Ads leads are dated by the linked conversion; SEO stays on the session date. Deals are sessions with a linked deal; wins are those deals marked won.'
+          : isSeo
+            ? 'Lead sessions from Google My Business, Organic SEO, or ChatGPT in the selected date range.'
+            : 'Lead sessions from Google Ads, Meta Ads, or ChatGPT Ads in the selected date range, dated by the linked conversion (respects the platform filter). Deals are sessions with a linked deal; wins are those deals marked won.'}
       </p>
 
       <div
@@ -85,24 +89,30 @@ export default function FunnelTableSection({
       {tab === 'leads' ? (
         <LeadsTable
           leads={leads}
-          showEntryUrl={isSeo}
-          emptyMessage={isSeo ? 'No SEO leads in this period.' : 'No ads leads in this period.'}
+          showEntryUrl={showEntryUrl}
+          emptyMessage={
+            isAll ? 'No leads in this period.' : isSeo ? 'No SEO leads in this period.' : 'No ads leads in this period.'
+          }
         />
       ) : null}
       {tab === 'deals' ? (
         <DealsTable
           deals={deals}
           embedded
-          showEntryUrl={isSeo}
-          emptyMessage={isSeo ? 'No SEO deals in this period.' : 'No ads deals in this period.'}
+          showEntryUrl={showEntryUrl}
+          emptyMessage={
+            isAll ? 'No deals in this period.' : isSeo ? 'No SEO deals in this period.' : 'No ads deals in this period.'
+          }
         />
       ) : null}
       {tab === 'wins' ? (
         <DealsTable
           deals={wins}
           embedded
-          showEntryUrl={isSeo}
-          emptyMessage={isSeo ? 'No SEO wins in this period.' : 'No ads wins in this period.'}
+          showEntryUrl={showEntryUrl}
+          emptyMessage={
+            isAll ? 'No wins in this period.' : isSeo ? 'No SEO wins in this period.' : 'No ads wins in this period.'
+          }
         />
       ) : null}
     </section>

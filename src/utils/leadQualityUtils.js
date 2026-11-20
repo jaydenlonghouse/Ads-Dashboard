@@ -42,23 +42,43 @@ export function preferLeadQuality(current, incoming) {
   return qualityRank(incoming) > qualityRank(current) ? incoming : current
 }
 
+/** Slices shown on the lead/deal quality pie (Other is appended when needed). */
+export const QUALITY_PIE_SLICES = [
+  { key: 'high', label: 'High', color: '#059669' },
+  { key: 'medium', label: 'Medium', color: '#D97706' },
+  { key: 'low', label: 'Low', color: '#EA580C' },
+  { key: 'notYetQualified', label: 'Not Yet Qualified', color: '#08447F' },
+  { key: 'spam', label: 'Spam', color: '#5C6773' },
+]
+
+const OTHER_SLICE = { key: 'other', label: 'Other', color: '#B0C4D8' }
+
+/** Bucket a stored Pipedrive label into a pie slice key. */
+export function qualityBucket(value) {
+  const n = String(value ?? '').trim().toLowerCase()
+  if (!n) return 'other'
+  if (n === 'high' || n.includes('high quality') || n === 'hot') return 'high'
+  if (n === 'medium' || n.includes('medium quality') || n === 'warm') return 'medium'
+  if (n === 'low' || n.includes('low quality') || n === 'cold') return 'low'
+  if (n.includes('not yet qualified')) return 'notYetQualified'
+  if (n.includes('spam')) return 'spam'
+  return 'other'
+}
+
 /**
  * @param {Array<{ leadQuality?: string|null }>} items
- * @returns {{ high: number|null, medium: number|null, low: number|null }}
+ * @returns {Array<{ key: string, label: string, color: string, count: number }>}
  */
-export function qualityShare(items) {
-  const total = items.length
-  const counts = { High: 0, Medium: 0, Low: 0 }
+export function qualityBreakdown(items) {
+  const counts = Object.fromEntries(
+    [...QUALITY_PIE_SLICES, OTHER_SLICE].map(slice => [slice.key, 0]),
+  )
   for (const item of items) {
-    const tier = qualityTier(item?.leadQuality)
-    if (tier) counts[tier] += 1
+    counts[qualityBucket(item?.leadQuality)] += 1
   }
-  const pct = count => (total === 0 ? null : (count * 100) / total)
-  return {
-    high: pct(counts.High),
-    medium: pct(counts.Medium),
-    low: pct(counts.Low),
-  }
+  const slices = QUALITY_PIE_SLICES.map(slice => ({ ...slice, count: counts[slice.key] }))
+  if (counts.other > 0) slices.push({ ...OTHER_SLICE, count: counts.other })
+  return slices
 }
 
 export function qualityPillClass(value) {

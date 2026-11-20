@@ -85,8 +85,8 @@ export function isWonDealStatus(status) {
 
 /**
  * Deduped deals linked from the given lead sessions.
- * Lead quality comes from the Pipedrive lead (via the session), not the
- * converted Pipedrive deal — conversion deletes the lead and its labels.
+ * Quality prefers the Pipedrive deal's labels, then the linked session
+ * (original lead). Conversion deletes the source lead.
  * @param {Array<{ linkedDealIds?: string[], leadQuality?: string|null, entryUrl?: string|null }>} sessions
  * @param {Array<{ id: string }>} allDeals
  */
@@ -140,5 +140,18 @@ export function funnelCounts(sessions, allDeals) {
     wins,
     leadToDealRate: safeDivide(deals.length * 100, sessions.length),
     dealCloseRate: safeDivide(wins * 100, deals.length),
+    leadToWinRate: safeDivide(wins * 100, sessions.length),
   }
+}
+
+/** Deduped concat of Ads and SEO session lists. */
+export function mergeLeadSessions(left, right) {
+  const seen = new Set()
+  const out = []
+  for (const session of [...(left ?? []), ...(right ?? [])]) {
+    if (!session?.id || seen.has(session.id)) continue
+    seen.add(session.id)
+    out.push(session)
+  }
+  return out
 }

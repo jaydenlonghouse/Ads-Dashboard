@@ -11,6 +11,7 @@ const QUALITY_FIELD = () =>
 
 const MAX_PERSIST = 200
 
+/** Deal labels first (byDeal), then leftover Pipedrive lead labels on the org. */
 function qualityForRecord(record, maps) {
   const dealId = record.dealId ? String(record.dealId) : ''
   if (dealId && maps.byDeal.has(dealId)) return maps.byDeal.get(dealId)

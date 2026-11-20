@@ -16,7 +16,7 @@ const PLATFORM_TABS = [
 
 /**
  * @param {object} props
- * @param {'ads' | 'seo'} [props.department]
+ * @param {'ads' | 'seo' | 'all'} [props.department]
  * @param {string} props.platformTab
  * @param {(id: string) => void} props.onPlatformChange
  * @param {string} props.dateSummary

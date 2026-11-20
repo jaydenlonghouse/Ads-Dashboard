@@ -32,9 +32,10 @@ import {
   funnelCounts,
   getDealsForSessions,
   getWonDeals,
+  mergeLeadSessions,
   withAdsLeadDate,
 } from '../utils/leadSessionsUtils.js'
-import { qualityShare } from '../utils/leadQualityUtils.js'
+import { qualityBreakdown } from '../utils/leadQualityUtils.js'
 import {
   filterByDateRange,
   filterByPlatform,
@@ -140,6 +141,11 @@ export function useDashboardData({ dateRange, platformFilter }) {
     'ads',
     platformFilter,
   )
+  const adsAllCurrentSessions = filterSessionsByDepartment(
+    filterByDateRange(adsDatedSessions, start, end),
+    'ads',
+    ['All'],
+  )
   const seoCurrentSessions = filterSessionsByDepartment(
     filterByDateRange(allLeadSessions, start, end),
     'seo',
@@ -149,10 +155,17 @@ export function useDashboardData({ dateRange, platformFilter }) {
     'ads',
     platformFilter,
   )
+  const adsAllPreviousSessions = filterSessionsByDepartment(
+    filterByDateRange(adsDatedSessions, prevStart, prevEnd),
+    'ads',
+    ['All'],
+  )
   const seoPreviousSessions = filterSessionsByDepartment(
     filterByDateRange(allLeadSessions, prevStart, prevEnd),
     'seo',
   )
+  const allCurrentSessions = mergeLeadSessions(adsAllCurrentSessions, seoCurrentSessions)
+  const allPreviousSessions = mergeLeadSessions(adsAllPreviousSessions, seoPreviousSessions)
 
   // ── 6. KPI aggregation — Conversions/CVR/CPL use Ads Lead Session Data ──
   const kpiOpts =
@@ -176,14 +189,19 @@ export function useDashboardData({ dateRange, platformFilter }) {
 
   const adsFunnel = funnelCounts(adsCurrentSessions, allDeals)
   const seoFunnel = funnelCounts(seoCurrentSessions, allDeals)
+  const allFunnel = funnelCounts(allCurrentSessions, allDeals)
   const adsFunnelPrev = funnelCounts(adsPreviousSessions, allDeals)
   const seoFunnelPrev = funnelCounts(seoPreviousSessions, allDeals)
+  const allFunnelPrev = funnelCounts(allPreviousSessions, allDeals)
 
   const adsFunnelDeltas = Object.fromEntries(
     Object.keys(adsFunnel).map(key => [key, calcDelta(adsFunnel[key], adsFunnelPrev[key])]),
   )
   const seoFunnelDeltas = Object.fromEntries(
     Object.keys(seoFunnel).map(key => [key, calcDelta(seoFunnel[key], seoFunnelPrev[key])]),
+  )
+  const allFunnelDeltas = Object.fromEntries(
+    Object.keys(allFunnel).map(key => [key, calcDelta(allFunnel[key], allFunnelPrev[key])]),
   )
 
   const adsPeriodDeals = useMemo(
@@ -194,42 +212,20 @@ export function useDashboardData({ dateRange, platformFilter }) {
     () => getDealsForSessions(seoCurrentSessions, allDeals),
     [seoCurrentSessions, allDeals],
   )
+  const allPeriodDeals = useMemo(
+    () => getDealsForSessions(allCurrentSessions, allDeals),
+    [allCurrentSessions, allDeals],
+  )
   const adsPeriodWins = useMemo(() => getWonDeals(adsPeriodDeals), [adsPeriodDeals])
   const seoPeriodWins = useMemo(() => getWonDeals(seoPeriodDeals), [seoPeriodDeals])
+  const allPeriodWins = useMemo(() => getWonDeals(allPeriodDeals), [allPeriodDeals])
 
-  const adsLeadQuality = qualityShare(adsCurrentSessions)
-  const seoLeadQuality = qualityShare(seoCurrentSessions)
-  const adsDealQuality = qualityShare(adsPeriodDeals)
-  const seoDealQuality = qualityShare(seoPeriodDeals)
-  const adsLeadQualityPrev = qualityShare(adsPreviousSessions)
-  const seoLeadQualityPrev = qualityShare(seoPreviousSessions)
-  const adsDealQualityPrev = qualityShare(getDealsForSessions(adsPreviousSessions, allDeals))
-  const seoDealQualityPrev = qualityShare(getDealsForSessions(seoPreviousSessions, allDeals))
-
-  const adsLeadQualityDeltas = Object.fromEntries(
-    Object.keys(adsLeadQuality).map(key => [
-      key,
-      calcDelta(adsLeadQuality[key], adsLeadQualityPrev[key]),
-    ]),
-  )
-  const seoLeadQualityDeltas = Object.fromEntries(
-    Object.keys(seoLeadQuality).map(key => [
-      key,
-      calcDelta(seoLeadQuality[key], seoLeadQualityPrev[key]),
-    ]),
-  )
-  const adsDealQualityDeltas = Object.fromEntries(
-    Object.keys(adsDealQuality).map(key => [
-      key,
-      calcDelta(adsDealQuality[key], adsDealQualityPrev[key]),
-    ]),
-  )
-  const seoDealQualityDeltas = Object.fromEntries(
-    Object.keys(seoDealQuality).map(key => [
-      key,
-      calcDelta(seoDealQuality[key], seoDealQualityPrev[key]),
-    ]),
-  )
+  const adsLeadQuality = qualityBreakdown(adsCurrentSessions)
+  const seoLeadQuality = qualityBreakdown(seoCurrentSessions)
+  const allLeadQuality = qualityBreakdown(allCurrentSessions)
+  const adsDealQuality = qualityBreakdown(adsPeriodDeals)
+  const seoDealQuality = qualityBreakdown(seoPeriodDeals)
+  const allDealQuality = qualityBreakdown(allPeriodDeals)
 
   const monthlyTrendData = getTrendBucketsWithinSelectedRange({ start, end }).map(
     ({ start: ws, end: we }) => {
@@ -264,22 +260,25 @@ export function useDashboardData({ dateRange, platformFilter }) {
     filteredRows:       currentRows,
     adsCurrentSessions,
     seoCurrentSessions,
+    allCurrentSessions,
     adsPeriodDeals,
     seoPeriodDeals,
+    allPeriodDeals,
     adsPeriodWins,
     seoPeriodWins,
+    allPeriodWins,
     adsFunnel,
     seoFunnel,
+    allFunnel,
     adsFunnelDeltas,
     seoFunnelDeltas,
+    allFunnelDeltas,
     adsLeadQuality,
     seoLeadQuality,
+    allLeadQuality,
     adsDealQuality,
     seoDealQuality,
-    adsLeadQualityDeltas,
-    seoLeadQualityDeltas,
-    adsDealQualityDeltas,
-    seoDealQualityDeltas,
+    allDealQuality,
     availablePlatforms,
     prevStart,
     prevEnd,

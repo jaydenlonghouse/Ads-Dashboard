@@ -5,10 +5,11 @@
 const TABS = [
   { id: 'ads', label: 'Ads' },
   { id: 'seo', label: 'SEO' },
+  { id: 'all', label: 'All leads' },
 ]
 
 /**
- * @param {{ selected: 'ads' | 'seo', onChange: (id: 'ads' | 'seo') => void, variant?: 'header' | 'light' }} props
+ * @param {{ selected: 'ads' | 'seo' | 'all', onChange: (id: 'ads' | 'seo' | 'all') => void, variant?: 'header' | 'light' }} props
  */
 export default function DepartmentFilter({ selected, onChange, variant = 'header' }) {
   const isHeader = variant === 'header'

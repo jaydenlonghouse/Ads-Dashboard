@@ -1,5 +1,5 @@
 /**
- * Pipedrive Leads API — lead labels keyed by organization id.
+ * Pipedrive lead + deal labels keyed by organization id and deal id.
  */
 
 import { classifyLeadLabels } from '../../src/utils/leadQualityUtils.js'
@@ -48,9 +48,44 @@ async function fetchAllLeads(path) {
   return out
 }
 
-async function fetchLabelNameById() {
+async function fetchAllV2Deals() {
+  async function page(archivedStatus) {
+    const out = []
+    let cursor = null
+    for (;;) {
+      const params = { limit: 500, include_fields: 'source_lead_id' }
+      if (cursor) params.cursor = cursor
+      if (archivedStatus) params.archived_status = archivedStatus
+      const data = await pipedriveGet('/api/v2/deals', params)
+      out.push(...(data?.data ?? []))
+      cursor = data?.additional_data?.next_cursor ?? null
+      if (!cursor) break
+    }
+    return out
+  }
+
+  const [open, archived] = await Promise.all([page(null), page('archived')])
+  return [...open, ...archived]
+}
+
+async function fetchLeadLabelNameById() {
   const data = await pipedriveGet('/v1/leadLabels')
-  return Object.fromEntries((data?.data ?? []).map(label => [label.id, label.name]))
+  return Object.fromEntries((data?.data ?? []).map(label => [String(label.id), label.name]))
+}
+
+async function fetchDealLabelNameById() {
+  const data = await pipedriveGet('/api/v2/dealFields')
+  const field = (data?.data ?? []).find(
+    f => f.field_code === 'label_ids' || String(f.field_name ?? '').toLowerCase() === 'label',
+  )
+  const names = {}
+  for (const option of field?.options ?? []) {
+    const id = option.id ?? option.value
+    const name = option.label ?? option.name
+    if (id == null || !name) continue
+    names[String(id)] = String(name)
+  }
+  return names
 }
 
 function orgIdFromDeal(deal) {
@@ -63,33 +98,59 @@ function orgIdFromDeal(deal) {
   return String(org)
 }
 
-async function fetchAllDeals(path) {
-  return fetchAllLeads(path)
+function dealLabelIds(deal) {
+  if (Array.isArray(deal?.label_ids) && deal.label_ids.length) {
+    return deal.label_ids.map(id => String(id))
+  }
+  const raw = deal?.label
+  if (raw == null || raw === '') return []
+  if (Array.isArray(raw)) {
+    return raw
+      .map(item => {
+        if (item == null) return ''
+        if (typeof item === 'object') return String(item.id ?? item.value ?? '')
+        return String(item)
+      })
+      .filter(Boolean)
+  }
+  if (typeof raw === 'object') {
+    const id = raw.id ?? raw.value
+    return id == null ? [] : [String(id)]
+  }
+  return String(raw)
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+}
+
+function qualityFromLabelIds(ids, labelById) {
+  const names = (ids ?? []).map(id => labelById[String(id)]).filter(Boolean)
+  return classifyLeadLabels(names)
 }
 
 /**
- * Historical quality maps from Pipedrive leads (active + archived) and deals.
- * Deal labels are usually empty after conversion, so deals inherit the org's
- * newest labeled lead. Converted source leads that Pipedrive deleted are gone.
+ * Historical quality maps from Pipedrive lead labels and deal labels.
+ * Converted leads are deleted, so deal labels (when present) are the catch-up
+ * source. Otherwise the deal inherits the org's newest labeled leftover lead.
  * @returns {Promise<{ byOrg: Map<string, string>, byDeal: Map<string, string> }|null>}
  */
 export async function fetchLeadQualityMaps() {
   if (!isPipedriveConfigured()) return null
 
-  const [labelById, activeLeads, archivedLeads, openDeals, archivedDeals] = await Promise.all([
-    fetchLabelNameById(),
+  const [leadLabelById, dealLabelById, activeLeads, archivedLeads, deals] = await Promise.all([
+    fetchLeadLabelNameById(),
+    fetchDealLabelNameById(),
     fetchAllLeads('/v1/leads'),
     fetchAllLeads('/v1/leads/archived'),
-    fetchAllDeals('/v1/deals'),
-    fetchAllDeals('/v1/deals/archived'),
+    fetchAllV2Deals(),
   ])
+  const labelById = { ...leadLabelById, ...dealLabelById }
 
   const byOrgDated = new Map()
   for (const lead of [...activeLeads, ...archivedLeads]) {
     const orgId = lead.organization_id == null ? '' : String(lead.organization_id)
     if (!orgId) continue
-    const names = (lead.label_ids ?? []).map(id => labelById[id]).filter(Boolean)
-    const quality = classifyLeadLabels(names)
+    const quality = qualityFromLabelIds(lead.label_ids, labelById)
     if (!quality) continue
     const prev = byOrgDated.get(orgId)
     if (!prev || (lead.add_time || '') > prev.addTime) {
@@ -99,10 +160,12 @@ export async function fetchLeadQualityMaps() {
 
   const byOrg = new Map([...byOrgDated.entries()].map(([orgId, row]) => [orgId, row.quality]))
   const byDeal = new Map()
-  for (const deal of [...openDeals, ...archivedDeals]) {
+  for (const deal of deals) {
     if (deal?.id == null) continue
-    const fromOrg = byOrg.get(orgIdFromDeal(deal))
-    if (fromOrg) byDeal.set(String(deal.id), fromOrg)
+    const fromDeal = qualityFromLabelIds(dealLabelIds(deal), labelById)
+    const fromOrg = byOrg.get(orgIdFromDeal(deal)) ?? null
+    const quality = fromDeal || fromOrg
+    if (quality) byDeal.set(String(deal.id), quality)
   }
 
   return { byOrg, byDeal }
