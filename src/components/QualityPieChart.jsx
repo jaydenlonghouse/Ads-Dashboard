@@ -1,6 +1,16 @@
 import { Pie, PieChart, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 
+import { formatPercent } from '../utils/kpiUtils.js'
+
 const CHART_FONT = 'Figtree, sans-serif'
+
+function sliceShare(count, total) {
+  return total === 0 ? null : (count * 100) / total
+}
+
+function formatCountAndShare(count, percent) {
+  return `${Number(count).toLocaleString('en-US')} (${formatPercent(percent, 1)})`
+}
 
 function QualityTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -12,7 +22,7 @@ function QualityTooltip({ active, payload }) {
       style={{ fontFamily: CHART_FONT }}
     >
       <p className="font-semibold leading-[1.2] text-ink-900">{row.label}</p>
-      <p className="text-ink-700">{Number(row.count).toLocaleString('en-US')}</p>
+      <p className="text-ink-700">{formatCountAndShare(row.count, row.percent)}</p>
     </div>
   )
 }
@@ -22,7 +32,11 @@ function QualityTooltip({ active, payload }) {
  */
 export default function QualityPieChart({ title, slices, emptyMessage = 'No data in this period.' }) {
   const total = slices.reduce((sum, slice) => sum + slice.count, 0)
-  const pieData = slices.filter(slice => slice.count > 0)
+  const withShare = slices.map(slice => ({
+    ...slice,
+    percent: sliceShare(slice.count, total),
+  }))
+  const pieData = withShare.filter(slice => slice.count > 0)
 
   return (
     <section className="rounded-xl border border-brand-100 bg-white p-5 shadow-sm">
@@ -58,7 +72,7 @@ export default function QualityPieChart({ title, slices, emptyMessage = 'No data
             </ResponsiveContainer>
           </div>
           <ul className="flex w-full min-w-0 flex-col gap-2 text-sm leading-[1.45]">
-            {slices.map(slice => (
+            {withShare.map(slice => (
               <li key={slice.key} className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2">
                   <span
@@ -66,10 +80,10 @@ export default function QualityPieChart({ title, slices, emptyMessage = 'No data
                     style={{ background: slice.color }}
                     aria-hidden
                   />
-                  <span className="truncate text-ink-700">{slice.label}</span>
+                  <span className="text-ink-700">{slice.label}</span>
                 </span>
                 <span className="shrink-0 font-medium tabular-nums text-ink-900">
-                  {slice.count.toLocaleString('en-US')}
+                  {formatCountAndShare(slice.count, slice.percent)}
                 </span>
               </li>
             ))}
