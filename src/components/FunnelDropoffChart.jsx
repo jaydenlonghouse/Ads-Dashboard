@@ -62,8 +62,8 @@ export default function FunnelDropoffChart({ leads = 0, deals = 0, wins = 0 }) {
   const steps = [
     conversionStep('Leads', 'Deals', deals, leads),
     conversionStep('Deals', 'Wins', wins, deals),
+    conversionStep('Leads', 'Wins', wins, leads),
   ]
-  const leadToWin = safeDivide(wins * 100, leads)
 
   return (
     <section className="rounded-xl border border-brand-100 bg-white p-5 shadow-sm">
@@ -104,7 +104,7 @@ export default function FunnelDropoffChart({ leads = 0, deals = 0, wins = 0 }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <ul className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
+      <ul className="mt-4 grid min-w-0 gap-3 sm:grid-cols-3">
         {steps.map(step => (
           <li
             key={step.key}
@@ -123,9 +123,6 @@ export default function FunnelDropoffChart({ leads = 0, deals = 0, wins = 0 }) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs leading-[1.45] text-ink-500">
-        {formatPercent(leadToWin, 1)} of leads became wins.
-      </p>
     </section>
   )
 }
