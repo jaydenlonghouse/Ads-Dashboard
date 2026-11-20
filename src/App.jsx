@@ -36,7 +36,6 @@ import {
   DEFAULT_CHART_METRIC_KEYS,
   SEO_FUNNEL_DEFS,
   ALL_FUNNEL_DEFS,
-  FUNNEL_RATE_DEFS,
 } from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
 
@@ -147,7 +146,6 @@ export default function App() {
     seoPeriodWins,
     allPeriodWins,
     adsFunnel,
-    adsFunnelDeltas,
     seoFunnel,
     seoFunnelDeltas,
     allFunnel,
@@ -333,15 +331,12 @@ export default function App() {
               </div>
             )}
 
-            {isLoading ? (
-              <div className="h-80 animate-pulse rounded-xl border border-brand-100 bg-white" />
-            ) : (
-              <FunnelDropoffChart
-                leads={allFunnel.leads}
-                deals={allFunnel.deals}
-                wins={allFunnel.wins}
-              />
-            )}
+            <FunnelDropoffChart
+              leads={allFunnel.leads}
+              deals={allFunnel.deals}
+              wins={allFunnel.wins}
+              isLoading={isLoading}
+            />
 
             <QualityPiesRow
               leadSlices={allLeadQuality}
@@ -425,38 +420,23 @@ export default function App() {
               isLoading={isLoading}
             />
 
-            {isLoading ? (
-              <div className="grid min-w-0 grid-cols-2 gap-3">
-                {FUNNEL_RATE_DEFS.map(d => (
-                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-w-0 grid-cols-2 gap-3">
-                {FUNNEL_RATE_DEFS.map(d => (
-                  <KpiCard
-                    key={d.key}
-                    isMobile={isMobile}
-                    label={d.label}
-                    tooltip={d.tooltip}
-                    value={d.format(adsFunnel[d.key])}
-                    delta={adsFunnelDeltas[d.key]}
-                    lowerIsBetter={d.lowerIsBetter}
-                  />
-                ))}
-              </div>
-            )}
+            <FunnelDropoffChart
+              leads={adsFunnel.leads}
+              deals={adsFunnel.deals}
+              wins={adsFunnel.wins}
+              isLoading={isLoading}
+            />
           </>
         ) : (
           <>
             {isLoading ? (
-              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
                 {SEO_FUNNEL_DEFS.map(d => (
                   <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
                 ))}
               </div>
             ) : (
-              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3">
                 {SEO_FUNNEL_DEFS.map(d => (
                   <KpiCard
                     key={d.key}
@@ -470,6 +450,13 @@ export default function App() {
                 ))}
               </div>
             )}
+
+            <FunnelDropoffChart
+              leads={seoFunnel.leads}
+              deals={seoFunnel.deals}
+              wins={seoFunnel.wins}
+              isLoading={isLoading}
+            />
 
             <QualityPiesRow
               leadSlices={seoLeadQuality}

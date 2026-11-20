@@ -54,9 +54,12 @@ function conversionStep(fromLabel, toLabel, converted, of) {
 }
 
 /**
- * @param {{ leads: number, deals: number, wins: number }} props
+ * @param {{ leads: number, deals: number, wins: number, isLoading?: boolean }} props
  */
-export default function FunnelDropoffChart({ leads = 0, deals = 0, wins = 0 }) {
+export default function FunnelDropoffChart({ leads = 0, deals = 0, wins = 0, isLoading = false }) {
+  if (isLoading) {
+    return <div className="h-80 animate-pulse rounded-xl border border-brand-100 bg-white" />
+  }
   const counts = { leads, deals, wins }
   const data = STAGES.map(stage => ({ ...stage, count: counts[stage.key] ?? 0 }))
   const steps = [
