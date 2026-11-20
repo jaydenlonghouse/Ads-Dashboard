@@ -5,7 +5,9 @@
  *   - dateRange    { start: Date, end: Date }
  *   - department   'ads' | 'seo' | 'all'
  *   - platformTab  'All' | 'Google' | 'Meta' (Ads view)
+ *   - funnelTab    'leads' | 'deals' | 'wins'
  *   - chartMetricKeys  KPI keys shown on the trend chart (may be empty)
+ * Current view is mirrored to the URL so a refresh restores it.
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
@@ -38,6 +40,10 @@ import {
   ALL_FUNNEL_DEFS,
 } from './config/kpiConfig.js'
 import { useMockData } from './config/env.js'
+import {
+  readDashboardViewFromSearch,
+  writeDashboardViewToUrl,
+} from './utils/dashboardViewState.js'
 
 import DateRangePicker from './components/DateRangePicker.jsx'
 import DepartmentFilter from './components/DepartmentFilter.jsx'
@@ -51,31 +57,40 @@ import { QualityPiesRow } from './components/QualityPieChart.jsx'
 import FunnelDropoffChart from './components/FunnelDropoffChart.jsx'
 import longhouseAdvertisingLogo from './assets/longhouse-advertising-logo.svg'
 
-function getInitialDateState() {
+function getInitialViewState() {
   const now = new Date()
+  const fromUrl = readDashboardViewFromSearch()
   const saved = readBootstrapDateDefault()
-  const applied = applyDateDefault(saved)
+  const dateFromUrl = fromUrl.dateSnap ? applyDateDefault(fromUrl.dateSnap) : null
+  const applied = dateFromUrl ?? applyDateDefault(saved)
   return {
+    restoredDateFromUrl: Boolean(dateFromUrl),
     presetId: applied?.presetId ?? DEFAULT_DATE_PRESET_ID,
     dateRange: applied?.dateRange ?? getDateRangeForPreset(DEFAULT_DATE_PRESET_ID),
     calendarMonth: applied?.calendarMonth ?? now.getMonth() + 1,
     calendarYear: applied?.calendarYear ?? now.getFullYear(),
-    saved: applied ? saved : null,
+    saved: applyDateDefault(saved) ? saved : null,
+    department: fromUrl.department ?? 'ads',
+    platformTab: fromUrl.platformTab ?? 'All',
+    funnelTab: fromUrl.funnelTab ?? 'leads',
+    chartMetricKeys: fromUrl.chartMetricKeys ?? [...DEFAULT_CHART_METRIC_KEYS],
   }
 }
 
 export default function App() {
   const { session } = useAuth()
   const userId = session?.user?.id ?? null
-  const [datePresetId, setDatePresetId] = useState(() => getInitialDateState().presetId)
-  const [dateRange, setDateRange] = useState(() => getInitialDateState().dateRange)
-  const [calendarMonth, setCalendarMonth] = useState(() => getInitialDateState().calendarMonth)
-  const [calendarYear, setCalendarYear] = useState(() => getInitialDateState().calendarYear)
-  const [savedDateDefault, setSavedDateDefault] = useState(() => getInitialDateState().saved)
-  const [platformTab, setPlatformTab] = useState('All')
-  const [department, setDepartment] = useState(/** @type {'ads' | 'seo' | 'all'} */ ('ads'))
-  const [chartMetricKeys, setChartMetricKeys] = useState(() => [...DEFAULT_CHART_METRIC_KEYS])
+  const [datePresetId, setDatePresetId] = useState(() => getInitialViewState().presetId)
+  const [dateRange, setDateRange] = useState(() => getInitialViewState().dateRange)
+  const [calendarMonth, setCalendarMonth] = useState(() => getInitialViewState().calendarMonth)
+  const [calendarYear, setCalendarYear] = useState(() => getInitialViewState().calendarYear)
+  const [savedDateDefault, setSavedDateDefault] = useState(() => getInitialViewState().saved)
+  const [platformTab, setPlatformTab] = useState(() => getInitialViewState().platformTab)
+  const [department, setDepartment] = useState(() => getInitialViewState().department)
+  const [funnelTab, setFunnelTab] = useState(() => getInitialViewState().funnelTab)
+  const [chartMetricKeys, setChartMetricKeys] = useState(() => getInitialViewState().chartMetricKeys)
   const [metricSheet, setMetricSheet] = useState(null)
+  const [restoredDateFromUrl] = useState(() => getInitialViewState().restoredDateFromUrl)
 
   const isMobile = useMediaQuery('(max-width: 767px)')
 
@@ -83,6 +98,7 @@ export default function App() {
     if (!useMockData && !userId) return
     const pref = readDateDefaultFromUser(session?.user)
     setSavedDateDefault(pref)
+    if (restoredDateFromUrl) return
     const applied = applyDateDefault(pref)
     if (!applied) return
     setDatePresetId(applied.presetId)
@@ -91,7 +107,29 @@ export default function App() {
       setCalendarMonth(applied.calendarMonth)
       setCalendarYear(applied.calendarYear)
     }
-  }, [userId])
+  }, [userId, restoredDateFromUrl])
+
+  useEffect(() => {
+    writeDashboardViewToUrl({
+      department,
+      platformTab,
+      funnelTab,
+      chartMetricKeys,
+      presetId: datePresetId,
+      calendarMonth,
+      calendarYear,
+      dateRange,
+    })
+  }, [
+    department,
+    platformTab,
+    funnelTab,
+    chartMetricKeys,
+    datePresetId,
+    calendarMonth,
+    calendarYear,
+    dateRange,
+  ])
 
   const toggleChartMetric = useCallback(key => {
     setChartMetricKeys(prev =>
@@ -471,6 +509,8 @@ export default function App() {
           leads={isAll ? allCurrentSessions : isAds ? adsCurrentSessions : seoCurrentSessions}
           deals={isAll ? allPeriodDeals : isAds ? adsPeriodDeals : seoPeriodDeals}
           wins={isAll ? allPeriodWins : isAds ? adsPeriodWins : seoPeriodWins}
+          tab={funnelTab}
+          onTabChange={setFunnelTab}
           isLoading={isLoading}
         />
       </main>

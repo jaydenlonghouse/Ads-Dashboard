@@ -2,8 +2,6 @@
  * Shared Leads / Deals / Wins tabs for Ads and SEO department views.
  */
 
-import { useState } from 'react'
-
 import DealsTable from './DealsTable.jsx'
 import LeadsTable from './LeadsTable.jsx'
 
@@ -19,6 +17,8 @@ const TABS = [
  *   leads: Array<object>,
  *   deals: Array<object>,
  *   wins: Array<object>,
+ *   tab?: 'leads' | 'deals' | 'wins',
+ *   onTabChange?: (id: 'leads' | 'deals' | 'wins') => void,
  *   isLoading?: boolean,
  * }} props
  */
@@ -27,9 +27,10 @@ export default function FunnelTableSection({
   leads,
   deals,
   wins,
+  tab = 'leads',
+  onTabChange,
   isLoading = false,
 }) {
-  const [tab, setTab] = useState('leads')
   const counts = { leads: leads.length, deals: deals.length, wins: wins.length }
   const isSeo = department === 'seo'
   const isAll = department === 'all'
@@ -74,7 +75,7 @@ export default function FunnelTableSection({
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => setTab(id)}
+              onClick={() => onTabChange?.(id)}
               className={`dashboardPill text-xs ${selected ? 'dashboardPillSelected' : ''}`}
             >
               {label}
