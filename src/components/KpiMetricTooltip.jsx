@@ -6,8 +6,8 @@ export default function KpiMetricTooltip({ text, chartSelected, metricLabel }) {
   if (!text) return null
 
   const triggerSurface = chartSelected
-    ? 'bg-white/20 text-white hover:bg-white/30 focus-visible:bg-white/30'
-    : 'bg-brand-800 text-white hover:bg-brand-900 focus-visible:bg-brand-900'
+    ? 'bg-white/25 text-white hover:bg-white hover:text-brand-800 focus-visible:bg-white focus-visible:text-brand-800'
+    : 'bg-ink-200 text-ink-600 hover:bg-brand-800 hover:text-white focus-visible:bg-brand-800 focus-visible:text-white'
 
   return (
     <span className="group/kpiTip relative z-10 inline-flex shrink-0">

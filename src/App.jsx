@@ -386,34 +386,6 @@ export default function App() {
               </div>
             )}
 
-            {isLoading ? (
-              <div className="grid min-w-0 grid-cols-2 gap-3">
-                {FUNNEL_RATE_DEFS.map(d => (
-                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-w-0 grid-cols-2 gap-3">
-                {FUNNEL_RATE_DEFS.map(d => (
-                  <KpiCard
-                    key={d.key}
-                    isMobile={isMobile}
-                    label={d.label}
-                    tooltip={d.tooltip}
-                    value={d.format(adsFunnel[d.key])}
-                    delta={adsFunnelDeltas[d.key]}
-                    lowerIsBetter={d.lowerIsBetter}
-                  />
-                ))}
-              </div>
-            )}
-
-            <QualityPiesRow
-              leadSlices={adsLeadQuality}
-              dealSlices={adsDealQuality}
-              isLoading={isLoading}
-            />
-
             <KpiMetricMobileSheet
               open={Boolean(metricSheet)}
               metricLabel={metricSheet?.label ?? ''}
@@ -446,6 +418,34 @@ export default function App() {
                 <TrendChart data={monthlyTrendData} selectedMetricKeys={chartKeysOrdered} />
               )}
             </section>
+
+            <QualityPiesRow
+              leadSlices={adsLeadQuality}
+              dealSlices={adsDealQuality}
+              isLoading={isLoading}
+            />
+
+            {isLoading ? (
+              <div className="grid min-w-0 grid-cols-2 gap-3">
+                {FUNNEL_RATE_DEFS.map(d => (
+                  <div key={d.key} className="h-24 animate-pulse rounded-xl border border-brand-100 bg-white p-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid min-w-0 grid-cols-2 gap-3">
+                {FUNNEL_RATE_DEFS.map(d => (
+                  <KpiCard
+                    key={d.key}
+                    isMobile={isMobile}
+                    label={d.label}
+                    tooltip={d.tooltip}
+                    value={d.format(adsFunnel[d.key])}
+                    delta={adsFunnelDeltas[d.key]}
+                    lowerIsBetter={d.lowerIsBetter}
+                  />
+                ))}
+              </div>
+            )}
           </>
         ) : (
           <>
