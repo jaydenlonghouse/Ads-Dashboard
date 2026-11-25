@@ -39,17 +39,13 @@ function FunnelTooltip({ active, payload }) {
 }
 
 function conversionStep(fromLabel, toLabel, converted, of) {
-  const rate = safeDivide(converted * 100, of)
-  const dropped = Math.max(0, of - converted)
-  const dropoff = safeDivide(dropped * 100, of)
   return {
     key: `${fromLabel}-${toLabel}`,
     fromLabel,
     toLabel,
     converted,
-    dropped,
-    rate,
-    dropoff,
+    of,
+    rate: safeDivide(converted * 100, of),
   }
 }
 
@@ -120,8 +116,7 @@ export default function FunnelDropoffChart({ leads = 0, deals = 0, wins = 0, isL
               {formatPercent(step.rate, 1)} converted
             </p>
             <p className="mt-1 text-xs leading-[1.45] text-ink-600">
-              {formatCount(step.dropped)} dropped
-              {step.dropoff == null ? '' : ` (${formatPercent(step.dropoff, 1)})`}
+              {formatCount(step.converted)}/{formatCount(step.of)}
             </p>
           </li>
         ))}
